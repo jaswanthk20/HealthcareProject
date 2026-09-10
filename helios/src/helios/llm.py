@@ -1,25 +1,8 @@
-"""
-The planning layer.
+"""Select governed public health indicators and published population dimensions.
 
-Two interchangeable planners implement the same contract. Both take a natural
-language question plus the retrieved slice of the semantic layer, and both
-return the same JSON plan. Neither is ever allowed to emit SQL.
-
-    DeterministicPlanner  BM25 + the controlled vocabulary. No model call, so
-                          it is free, offline, reproducible, and is what the
-                          eval suite and CI gate run against. It is also the
-                          fallback whenever the model is unavailable.
-
-    ModelPlanner          A configured model endpoint constrained by a JSON schema, for the
-                          long tail of phrasings the rules miss.
-
-Why a plan and not SQL
-----------------------
-The plan is a small, closed object: a governed metric id, a cohort of governed
-dimension values, and an optional break-out. Anything the model produces that
-is not in the semantic layer fails validation before a query is compiled, so a
-prompt injection has nothing to inject into. This is the control that lets a
-language model near patient data at all.
+The deterministic planner uses a controlled vocabulary. The optional model
+endpoint returns the same validated plan and falls back when unavailable.
+Neither planner produces observations, percentages or confidence intervals.
 """
 
 import json
@@ -70,7 +53,7 @@ PLAN_SCHEMA = {
 }
 
 SYSTEM = """You are the planning component of HELIOS, a real-world-data \
-healthcare intelligence product at a pharmaceutical company.
+dashboard of official public population-health statistics.
 
 Your ONLY job is to translate a business question into a plan that selects one \
 governed metric and one cohort. You never write SQL, never invent a metric, \
@@ -206,9 +189,9 @@ class Plan(dict):
 
 
 class DeterministicPlanner:
-    """Rules + BM25. No network, no key, fully reproducible."""
+    """Controlled vocabulary. No network, no key, fully reproducible."""
 
-    name = "deterministic-bm25"
+    name = "deterministic"
 
     def plan(self, question, hits=None):
         t0 = time.perf_counter()
@@ -223,7 +206,7 @@ class DeterministicPlanner:
                    "breakdown": None,
                    "reasoning": "No governed metric matched this question "
                                 f"(best retrieval score {score:.2f}). HELIOS "
-                                "answers only from its governed metric registry."}
+                                "answers only from its governed indicator registry."}
         else:
             raw = {"intent": "metric_query", "metric_id": mid, "filters": filters,
                    "breakdown": breakdown,
