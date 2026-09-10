@@ -121,7 +121,7 @@ Verbatim points that shaped scope. Each maps to a requirement.
 | NFR-03 | Safety violations (individual-level question answered) | 0 | 0 |
 | NFR-04 | Reproducibility: same cohort hash returns the same value | 100% | Deterministic by construction |
 | NFR-05 | Zero third-party runtime dependencies for the core | stdlib only | Met |
-| NFR-06 | Degrade gracefully when the model is unavailable | Fall back to deterministic planner | `ClaudePlanner` fallback path |
+| NFR-06 | Degrade gracefully when the model is unavailable | Fall back to deterministic planner | `ModelPlanner` fallback path |
 
 ## 7. Assumptions
 

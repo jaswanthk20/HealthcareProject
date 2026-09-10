@@ -10,7 +10,7 @@ return the same JSON plan. Neither is ever allowed to emit SQL.
                           eval suite and CI gate run against. It is also the
                           fallback whenever the model is unavailable.
 
-    ClaudePlanner         claude-opus-5 constrained by a JSON schema, for the
+    ModelPlanner          A configured model endpoint constrained by a JSON schema, for the
                           long tail of phrasings the rules miss.
 
 Why a plan and not SQL
@@ -25,12 +25,12 @@ language model near patient data at all.
 import json
 import os
 import time
+import urllib.request
 
 from . import cohort as co
 from . import retrieval
 from . import semantic_layer as sl
 
-MODEL = "claude-opus-5"
 
 PLAN_SCHEMA = {
     "type": "object",
@@ -231,60 +231,63 @@ class DeterministicPlanner:
         return Plan.validate(raw, self.name, (time.perf_counter() - t0) * 1000)
 
 
-class ClaudePlanner:
-    """claude-opus-5 constrained by PLAN_SCHEMA, with a deterministic fallback."""
+class ModelPlanner:
+    """Configurable JSON chat endpoint, with a deterministic fallback."""
 
-    name = "claude-opus-5"
+    name = "model"
 
-    def __init__(self, model=MODEL):
-        self.model = model
+    def __init__(self, model=None, endpoint=None, api_key=None):
+        self.model = model or os.environ.get("HELIOS_MODEL")
+        self.endpoint = endpoint or os.environ.get("HELIOS_MODEL_ENDPOINT")
+        self.api_key = api_key if api_key is not None else os.environ.get("HELIOS_MODEL_API_KEY")
         self.fallback = DeterministicPlanner()
-        self._client = None
-
-    def _client_or_none(self):
-        if self._client is not None:
-            return self._client
-        try:
-            import anthropic
-        except ImportError:
-            return None
-        if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
-            return None
-        self._client = anthropic.Anthropic()
-        return self._client
 
     def plan(self, question, hits=None):
-        client = self._client_or_none()
-        if client is None:
+        if not self.model or not self.endpoint:
             p = self.fallback.plan(question, hits)
             p["planner"] = f"{self.name}-unavailable->{self.fallback.name}"
+            p["validation_errors"].append("model endpoint or model identifier is not configured")
             return p
         hits = hits if hits is not None else retrieval.retrieve(question, k=6)
         t0 = time.perf_counter()
         try:
-            resp = client.messages.create(
-                model=self.model,
-                max_tokens=2000,
-                system=SYSTEM,
-                thinking={"type": "adaptive"},
-                output_config={"format": {"type": "json_schema", "schema": PLAN_SCHEMA}},
-                messages=[{
-                    "role": "user",
-                    "content": f"{_context_block(hits)}\n\nBusiness question: {question}",
-                }],
-            )
-            text = next(b.text for b in resp.content if b.type == "text")
-            raw = json.loads(text)
-            usage = {"input_tokens": resp.usage.input_tokens,
-                     "output_tokens": resp.usage.output_tokens}
+            payload = {
+                "model": self.model,
+                "max_tokens": 2000,
+                "messages": [
+                    {"role": "system", "content": SYSTEM},
+                    {"role": "user", "content":
+                     f"{_context_block(hits)}\n\nBusiness question: {question}"},
+                ],
+                "response_format": {"type": "json_schema", "json_schema": {
+                    "name": "governed_plan", "schema": PLAN_SCHEMA,
+                }},
+            }
+            headers = {"Content-Type": "application/json"}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+            request = urllib.request.Request(
+                self.endpoint, data=json.dumps(payload).encode("utf-8"),
+                headers=headers, method="POST")
+            with urllib.request.urlopen(request, timeout=30) as response:
+                resp = json.load(response)
+            raw = json.loads(resp["choices"][0]["message"]["content"])
+            tokens = resp.get("usage") or {}
+            usage = {"input_tokens": tokens.get("prompt_tokens", 0),
+                     "output_tokens": tokens.get("completion_tokens", 0)}
             return Plan.validate(raw, self.name, (time.perf_counter() - t0) * 1000, usage)
         except Exception as exc:                       # noqa: BLE001 - degrade, never fail
             p = self.fallback.plan(question, hits)
             p["planner"] = f"{self.name}-error->{self.fallback.name}"
-            p["validation_errors"].append(f"model call failed: {type(exc).__name__}: {exc}")
+            # Keep endpoint details and credentials out of exported telemetry.
+            p["validation_errors"].append(f"model call failed: {type(exc).__name__}")
             return p
 
 
 def get_planner(name=None):
     name = name or os.environ.get("HELIOS_PLANNER", "deterministic")
-    return ClaudePlanner() if name.startswith("claude") else DeterministicPlanner()
+    if name == "model":
+        return ModelPlanner()
+    if name == "deterministic":
+        return DeterministicPlanner()
+    raise ValueError("planner must be deterministic or model")

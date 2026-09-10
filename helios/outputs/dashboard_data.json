@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-10T19:08:20+00:00",
+  "generated_at": "2026-09-10T21:24:07+00:00",
   "brand": "SANOVIA (fictional)",
   "therapy_area": "Type 2 inflammation (atopic dermatitis / severe asthma)",
   "launch_date": "2024-09-01",
@@ -97,7 +97,7 @@
     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 95.8
+    "exec_ms": 141.8
    },
    {
     "check_id": "DQ-02",
@@ -115,7 +115,7 @@
     "business_impact": "Future-dated claims inflate the most recent periods of every trend, which is precisely the window launch leadership reads first.",
     "remediation": "Add a hard ingestion reject for service_date > ingest_date and quarantine the affected rows for vendor replay.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 58.8
+    "exec_ms": 121.6
    },
    {
     "check_id": "DQ-03",
@@ -133,7 +133,7 @@
     "business_impact": "Type 2 biomarker phenotyping silently mis-classifies these patients as eosinophilic, corrupting any biomarker-defined sub-cohort.",
     "remediation": "Apply a UCUM unit-harmonisation rule at ingestion and back-convert values above 20 by dividing by 1000.",
     "owner": "Clinical Data Products",
-    "exec_ms": 36.3
+    "exec_ms": 68.4
    },
    {
     "check_id": "DQ-04",
@@ -151,7 +151,7 @@
     "business_impact": "Severity-stratified effectiveness analyses can only be run on the minority of encounters that carry a score, and that minority skews to specialist care.",
     "remediation": "Negotiate structured EASI capture in the next EHR network contract cycle; in the interim derive proxy severity from treatment intensity and document the proxy in the dictionary.",
     "owner": "Clinical Data Products",
-    "exec_ms": 93.3
+    "exec_ms": 141.5
    },
    {
     "check_id": "DQ-05",
@@ -169,7 +169,7 @@
     "business_impact": "Any metric that depends on the QC provincial feed is structurally two months stale, so QC cannot be compared like-for-like against other provinces in a monthly review.",
     "remediation": "Either re-contract for a 30-day feed or publish QC on a separate, explicitly lagged panel. Do not blend silently.",
     "owner": "RWD Data Sourcing & Contracts",
-    "exec_ms": 0.8
+    "exec_ms": 0.4
    },
    {
     "check_id": "DQ-06",
@@ -187,7 +187,7 @@
     "business_impact": "Duplicates inflate utilisation and cost metrics (M08, M11), which are the two numbers the payer dossier rests on.",
     "remediation": "Add a deterministic dedupe on the natural key (patient_id, service_date, proc_code, paid_amount) in the silver layer, and assert uniqueness in the pipeline tests.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 257.3
+    "exec_ms": 488.2
    },
    {
     "check_id": "DQ-07",
@@ -205,7 +205,7 @@
     "business_impact": "Any analyst who reaches for sex_raw instead of the harmonised sex column silently drops or mis-buckets every patient sourced from the QC provincial feed.",
     "remediation": "Harmonisation already exists in the `sex` column. Revoke read access to sex_raw outside the engineering role and mark it deprecated in the data dictionary.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 16.0
+    "exec_ms": 26.9
    },
    {
     "check_id": "DQ-08",
@@ -223,7 +223,7 @@
     "business_impact": "The registry systematically under-represents rural patients. Any PRO or quality-of-life finding drawn from it describes urban patients and must not be generalised.",
     "remediation": "Either weight registry analyses to the claims spine by rurality and severity, or restrict registry-derived claims to urban populations in the label. Weighting is preferred.",
     "owner": "Medical Affairs / Registry Operations",
-    "exec_ms": 12.8
+    "exec_ms": 25.4
    },
    {
     "check_id": "DQ-09",
@@ -241,7 +241,7 @@
     "business_impact": "A temporally impossible record anywhere in the asset undermines confidence in every date-based metric, which is most of the product.",
     "remediation": "Add a cross-entity plausibility assertion (service_date >= date_of_birth) to the pipeline test suite.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 496.5
+    "exec_ms": 723.2
    },
    {
     "check_id": "DQ-10",
@@ -259,7 +259,7 @@
     "business_impact": "Specialty-based analyses (M07, field targeting) silently drop these claims, biasing specialist involvement downward.",
     "remediation": "Backfill the provider dimension from the full national registry rather than the active-prescriber subset.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 306.9
+    "exec_ms": 509.3
    },
    {
     "check_id": "DQ-11",
@@ -277,7 +277,7 @@
     "business_impact": "Unlinked patients cannot contribute to any treatment metric, so every therapy denominator is smaller than the epidemiological population it appears to describe.",
     "remediation": "Review the deterministic linkage key and add a probabilistic fallback; report the linkage rate alongside every denominator.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 29.3
+    "exec_ms": 53.1
    },
    {
     "check_id": "DQ-12",
@@ -295,7 +295,7 @@
     "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
     "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
     "owner": "Clinical Data Products",
-    "exec_ms": 20.7
+    "exec_ms": 38.3
    },
    {
     "check_id": "DQ-13",
@@ -313,7 +313,7 @@
     "business_impact": "An insight published from an asset whose licence has lapsed is a contractual breach, and the insight has to be withdrawn from every downstream deck.",
     "remediation": "Trigger the renewal workflow 120 days out; block publication from any source inside 30 days of expiry.",
     "owner": "RWD Data Sourcing & Contracts",
-    "exec_ms": 0.2
+    "exec_ms": 0.4
    },
    {
     "check_id": "DQ-14",
@@ -331,7 +331,7 @@
     "business_impact": "Time-to-event metrics (M01, M02) silently exclude these patients, and the exclusion is not random.",
     "remediation": "Extend the index-date algorithm to fall back to the earliest condition-specific claim when no confirmed code is present.",
     "owner": "RWD Data Engineering",
-    "exec_ms": 9.6
+    "exec_ms": 22.0
    },
    {
     "check_id": "DQ-15",
@@ -349,7 +349,7 @@
     "business_impact": "Processing data for a patient who has withdrawn consent is a privacy incident, reportable regardless of whether the row ever reached a report.",
     "remediation": "Add a consent-withdrawal purge job on the registry refresh and enforce consent_flag = 1 in the cohort layer.",
     "owner": "Privacy Office / Registry Operations",
-    "exec_ms": 0.7
+    "exec_ms": 1.6
    }
   ],
   "dimensions": {
@@ -1066,7 +1066,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 88.39330007322133,
+   "exec_ms": 141.56790007837117,
    "rows_scanned": 40000,
    "formatted": "161 days",
    "citation": {
@@ -1075,7 +1075,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 40000,
-    "exec_ms": 88.4
+    "exec_ms": 141.6
    }
   },
   "M02_time_to_advanced_therapy": {
@@ -1104,7 +1104,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 165.78310006298125,
+   "exec_ms": 377.67279997933656,
    "rows_scanned": 3924,
    "formatted": "255 days",
    "citation": {
@@ -1113,7 +1113,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 3924,
-    "exec_ms": 165.8
+    "exec_ms": 377.7
    }
   },
   "M03_advanced_therapy_initiation_rate": {
@@ -1138,7 +1138,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 138.5556000750512,
+   "exec_ms": 213.66499993018806,
    "rows_scanned": 1,
    "formatted": "9.8%",
    "citation": {
@@ -1147,7 +1147,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 40000,
-    "exec_ms": 138.6
+    "exec_ms": 213.7
    }
   },
   "M04_brand_share_new_starts": {
@@ -1327,7 +1327,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 235.58279999997467,
+   "exec_ms": 383.27420002315193,
    "rows_scanned": 22,
    "formatted": "15.5%",
    "citation": {
@@ -1336,7 +1336,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 2143,
-    "exec_ms": 235.6
+    "exec_ms": 383.3
    }
   },
   "M05_persistence_12mo": {
@@ -1361,7 +1361,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 323.54510005097836,
+   "exec_ms": 443.3413000078872,
    "rows_scanned": 1,
    "formatted": "47.8%",
    "citation": {
@@ -1370,7 +1370,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 2848,
-    "exec_ms": 323.5
+    "exec_ms": 443.3
    }
   },
   "M06_pdc_adherence": {
@@ -1399,7 +1399,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 252.82729999162257,
+   "exec_ms": 492.0639001065865,
    "rows_scanned": 2848,
    "formatted": "0.66",
    "citation": {
@@ -1408,7 +1408,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 2848,
-    "exec_ms": 252.8
+    "exec_ms": 492.1
    }
   },
   "M07_specialist_involvement_rate": {
@@ -1433,7 +1433,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 154.87540001049638,
+   "exec_ms": 405.5340000195429,
    "rows_scanned": 1,
    "formatted": "85.0%",
    "citation": {
@@ -1442,7 +1442,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 40000,
-    "exec_ms": 154.9
+    "exec_ms": 405.5
    }
   },
   "M08_ed_visits_per_100_patients": {
@@ -1467,7 +1467,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 81.99430000968277,
+   "exec_ms": 212.87459996528924,
    "rows_scanned": 1,
    "formatted": "58.3",
    "citation": {
@@ -1476,7 +1476,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 40000,
-    "exec_ms": 82.0
+    "exec_ms": 212.9
    }
   },
   "M09_treatment_sequence": {
@@ -1562,7 +1562,7 @@
    ],
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 808.5729000158608,
+   "exec_ms": 1246.9347999431193,
    "rows_scanned": 40000,
    "formatted": "42.0%",
    "citation": {
@@ -1571,7 +1571,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 40000,
-    "exec_ms": 808.6
+    "exec_ms": 1246.9
    }
   },
   "M10_switch_rate_12mo": {
@@ -1596,7 +1596,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 434.94820001069456,
+   "exec_ms": 707.2171999607235,
    "rows_scanned": 1,
    "formatted": "18.1%",
    "citation": {
@@ -1605,7 +1605,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 2848,
-    "exec_ms": 434.9
+    "exec_ms": 707.2
    }
   },
   "M11_annual_cost_per_patient": {
@@ -1634,7 +1634,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 539.5993000129238,
+   "exec_ms": 1029.3575000250712,
    "rows_scanned": 40000,
    "formatted": "$505",
    "citation": {
@@ -1643,7 +1643,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 40000,
-    "exec_ms": 539.6
+    "exec_ms": 1029.4
    }
   },
   "M12_untreated_severe_gap": {
@@ -1668,7 +1668,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 90.76299995649606,
+   "exec_ms": 140.4001999180764,
    "rows_scanned": 1,
    "formatted": "39.2%",
    "citation": {
@@ -1677,7 +1677,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 7044,
-    "exec_ms": 90.8
+    "exec_ms": 140.4
    }
   },
   "M13_quality_of_life_dlqi": {
@@ -1706,7 +1706,7 @@
    "categories": null,
    "suppressed": false,
    "suppression_reason": null,
-   "exec_ms": 12.606599950231612,
+   "exec_ms": 24.988300050608814,
    "rows_scanned": 3270,
    "formatted": "13.2",
    "citation": {
@@ -1715,7 +1715,7 @@
     "cohort_hash": "CH-A98871FFD11F",
     "cohort": "all patients",
     "denominator": 3270,
-    "exec_ms": 12.6
+    "exec_ms": 25.0
    }
   }
  },
@@ -1748,7 +1748,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 61.89199991058558,
+    "exec_ms": 120.79580000136048,
     "rows_scanned": 32493,
     "formatted": "150 days",
     "citation": {
@@ -1757,7 +1757,7 @@
      "cohort_hash": "CH-B7FDE1B4F5AB",
      "cohort": "rurality = urban",
      "denominator": 32493,
-     "exec_ms": 61.9
+     "exec_ms": 120.8
     }
    },
    {
@@ -1787,7 +1787,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 34.66550004668534,
+    "exec_ms": 42.802699957974255,
     "rows_scanned": 7507,
     "formatted": "227 days",
     "citation": {
@@ -1796,7 +1796,7 @@
      "cohort_hash": "CH-E3DEB3245B07",
      "cohort": "rurality = rural",
      "denominator": 7507,
-     "exec_ms": 34.7
+     "exec_ms": 42.8
     }
    }
   ],
@@ -1828,7 +1828,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 75.494599994272,
+    "exec_ms": 85.47469996847212,
     "rows_scanned": 15234,
     "formatted": "155 days",
     "citation": {
@@ -1837,7 +1837,7 @@
      "cohort_hash": "CH-D6DB9A304DE8",
      "cohort": "province = ON",
      "denominator": 15234,
-     "exec_ms": 75.5
+     "exec_ms": 85.5
     }
    },
    {
@@ -1867,7 +1867,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 49.376599956303835,
+    "exec_ms": 53.7922999355942,
     "rows_scanned": 9142,
     "formatted": "160 days",
     "citation": {
@@ -1876,7 +1876,7 @@
      "cohort_hash": "CH-7267B71EC563",
      "cohort": "province = QC",
      "denominator": 9142,
-     "exec_ms": 49.4
+     "exec_ms": 53.8
     }
    },
    {
@@ -1906,7 +1906,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 25.534500018693507,
+    "exec_ms": 31.579399947077036,
     "rows_scanned": 5438,
     "formatted": "154 days",
     "citation": {
@@ -1915,7 +1915,7 @@
      "cohort_hash": "CH-9BCBBECD5FB9",
      "cohort": "province = BC",
      "denominator": 5438,
-     "exec_ms": 25.5
+     "exec_ms": 31.6
     }
    },
    {
@@ -1945,7 +1945,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 31.366499955765903,
+    "exec_ms": 30.27509991079569,
     "rows_scanned": 4650,
     "formatted": "157 days",
     "citation": {
@@ -1954,7 +1954,7 @@
      "cohort_hash": "CH-AC1CD4006CC9",
      "cohort": "province = AB",
      "denominator": 4650,
-     "exec_ms": 31.4
+     "exec_ms": 30.3
     }
    },
    {
@@ -1984,7 +1984,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 11.720099952071905,
+    "exec_ms": 13.436799985356629,
     "rows_scanned": 1422,
     "formatted": "185 days",
     "citation": {
@@ -1993,7 +1993,7 @@
      "cohort_hash": "CH-E62F01D28331",
      "cohort": "province = MB",
      "denominator": 1422,
-     "exec_ms": 11.7
+     "exec_ms": 13.4
     }
    },
    {
@@ -2023,7 +2023,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 8.207899983972311,
+    "exec_ms": 12.001700000837445,
     "rows_scanned": 1304,
     "formatted": "192 days",
     "citation": {
@@ -2032,7 +2032,7 @@
      "cohort_hash": "CH-674F0C7A3E86",
      "cohort": "province = SK",
      "denominator": 1304,
-     "exec_ms": 8.2
+     "exec_ms": 12.0
     }
    },
    {
@@ -2062,7 +2062,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 5.958600086160004,
+    "exec_ms": 10.440599988214672,
     "rows_scanned": 1055,
     "formatted": "170 days",
     "citation": {
@@ -2071,7 +2071,7 @@
      "cohort_hash": "CH-C3C6D156D378",
      "cohort": "province = NS",
      "denominator": 1055,
-     "exec_ms": 6.0
+     "exec_ms": 10.4
     }
    },
    {
@@ -2101,7 +2101,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 4.674499970860779,
+    "exec_ms": 8.91640002373606,
     "rows_scanned": 831,
     "formatted": "213 days",
     "citation": {
@@ -2110,7 +2110,7 @@
      "cohort_hash": "CH-883D3C1C279F",
      "cohort": "province = NB",
      "denominator": 831,
-     "exec_ms": 4.7
+     "exec_ms": 8.9
     }
    },
    {
@@ -2140,7 +2140,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 2.9441999504342675,
+    "exec_ms": 5.61390002258122,
     "rows_scanned": 521,
     "formatted": "204 days",
     "citation": {
@@ -2149,7 +2149,7 @@
      "cohort_hash": "CH-CC386DFD38C1",
      "cohort": "province = NL",
      "denominator": 521,
-     "exec_ms": 2.9
+     "exec_ms": 5.6
     }
    },
    {
@@ -2179,7 +2179,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 1.2863000156357884,
+    "exec_ms": 2.1448000334203243,
     "rows_scanned": 160,
     "formatted": "244 days",
     "citation": {
@@ -2188,7 +2188,7 @@
      "cohort_hash": "CH-138A452F07E1",
      "cohort": "province = PE",
      "denominator": 160,
-     "exec_ms": 1.3
+     "exec_ms": 2.1
     }
    },
    {
@@ -2218,7 +2218,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 2.041999949142337,
+    "exec_ms": 2.7162000769749284,
     "rows_scanned": 243,
     "formatted": "217 days",
     "citation": {
@@ -2227,7 +2227,7 @@
      "cohort_hash": "CH-2A13336AF107",
      "cohort": "province = TERR",
      "denominator": 243,
-     "exec_ms": 2.0
+     "exec_ms": 2.7
     }
    }
   ],
@@ -2255,7 +2255,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 67.53559992648661,
+    "exec_ms": 86.12039999570698,
     "rows_scanned": 1,
     "formatted": "38.0%",
     "citation": {
@@ -2264,7 +2264,7 @@
      "cohort_hash": "CH-D6DB9A304DE8",
      "cohort": "province = ON",
      "denominator": 2656,
-     "exec_ms": 67.5
+     "exec_ms": 86.1
     }
    },
    {
@@ -2290,7 +2290,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 35.4742999188602,
+    "exec_ms": 67.25699990056455,
     "rows_scanned": 1,
     "formatted": "37.6%",
     "citation": {
@@ -2299,7 +2299,7 @@
      "cohort_hash": "CH-7267B71EC563",
      "cohort": "province = QC",
      "denominator": 1618,
-     "exec_ms": 35.5
+     "exec_ms": 67.3
     }
    },
    {
@@ -2325,7 +2325,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 28.108599944971502,
+    "exec_ms": 84.57700000144541,
     "rows_scanned": 1,
     "formatted": "39.8%",
     "citation": {
@@ -2334,7 +2334,7 @@
      "cohort_hash": "CH-9BCBBECD5FB9",
      "cohort": "province = BC",
      "denominator": 959,
-     "exec_ms": 28.1
+     "exec_ms": 84.6
     }
    },
    {
@@ -2360,7 +2360,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 39.790399954654276,
+    "exec_ms": 86.33019996341318,
     "rows_scanned": 1,
     "formatted": "37.4%",
     "citation": {
@@ -2369,7 +2369,7 @@
      "cohort_hash": "CH-AC1CD4006CC9",
      "cohort": "province = AB",
      "denominator": 834,
-     "exec_ms": 39.8
+     "exec_ms": 86.3
     }
    },
    {
@@ -2395,7 +2395,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 20.298600080423057,
+    "exec_ms": 49.407599959522486,
     "rows_scanned": 1,
     "formatted": "47.2%",
     "citation": {
@@ -2404,7 +2404,7 @@
      "cohort_hash": "CH-E62F01D28331",
      "cohort": "province = MB",
      "denominator": 252,
-     "exec_ms": 20.3
+     "exec_ms": 49.4
     }
    },
    {
@@ -2430,7 +2430,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 23.146299994550645,
+    "exec_ms": 43.73879998456687,
     "rows_scanned": 1,
     "formatted": "44.8%",
     "citation": {
@@ -2439,7 +2439,7 @@
      "cohort_hash": "CH-674F0C7A3E86",
      "cohort": "province = SK",
      "denominator": 223,
-     "exec_ms": 23.1
+     "exec_ms": 43.7
     }
    },
    {
@@ -2465,7 +2465,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 18.51860003080219,
+    "exec_ms": 41.402900009416044,
     "rows_scanned": 1,
     "formatted": "41.3%",
     "citation": {
@@ -2474,7 +2474,7 @@
      "cohort_hash": "CH-C3C6D156D378",
      "cohort": "province = NS",
      "denominator": 179,
-     "exec_ms": 18.5
+     "exec_ms": 41.4
     }
    },
    {
@@ -2500,7 +2500,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 18.566099926829338,
+    "exec_ms": 38.952199975028634,
     "rows_scanned": 1,
     "formatted": "48.4%",
     "citation": {
@@ -2509,7 +2509,7 @@
      "cohort_hash": "CH-883D3C1C279F",
      "cohort": "province = NB",
      "denominator": 161,
-     "exec_ms": 18.6
+     "exec_ms": 39.0
     }
    },
    {
@@ -2535,7 +2535,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 18.222200102172792,
+    "exec_ms": 36.65360005106777,
     "rows_scanned": 1,
     "formatted": "48.8%",
     "citation": {
@@ -2544,7 +2544,7 @@
      "cohort_hash": "CH-CC386DFD38C1",
      "cohort": "province = NL",
      "denominator": 86,
-     "exec_ms": 18.2
+     "exec_ms": 36.7
     }
    },
    {
@@ -2570,7 +2570,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 16.6177999926731,
+    "exec_ms": 34.67109997291118,
     "rows_scanned": 1,
     "formatted": "50.0%",
     "citation": {
@@ -2579,7 +2579,7 @@
      "cohort_hash": "CH-138A452F07E1",
      "cohort": "province = PE",
      "denominator": 32,
-     "exec_ms": 16.6
+     "exec_ms": 34.7
     }
    },
    {
@@ -2605,7 +2605,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 17.61350000742823,
+    "exec_ms": 41.79439996369183,
     "rows_scanned": 1,
     "formatted": "50.0%",
     "citation": {
@@ -2614,7 +2614,7 @@
      "cohort_hash": "CH-2A13336AF107",
      "cohort": "province = TERR",
      "denominator": 44,
-     "exec_ms": 17.6
+     "exec_ms": 41.8
     }
    }
   ],
@@ -2642,7 +2642,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 134.18009993620217,
+    "exec_ms": 355.4066999349743,
     "rows_scanned": 1,
     "formatted": "10.0%",
     "citation": {
@@ -2651,7 +2651,7 @@
      "cohort_hash": "CH-CA0DC968FF7F",
      "cohort": "insurance_type = public",
      "denominator": 17653,
-     "exec_ms": 134.2
+     "exec_ms": 355.4
     }
    },
    {
@@ -2677,7 +2677,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 126.72179995570332,
+    "exec_ms": 259.10300004761666,
     "rows_scanned": 1,
     "formatted": "9.9%",
     "citation": {
@@ -2686,7 +2686,7 @@
      "cohort_hash": "CH-DB75C4FAC04A",
      "cohort": "insurance_type = private",
      "denominator": 15057,
-     "exec_ms": 126.7
+     "exec_ms": 259.1
     }
    },
    {
@@ -2712,7 +2712,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 71.9210000243038,
+    "exec_ms": 189.61050000507385,
     "rows_scanned": 1,
     "formatted": "10.3%",
     "citation": {
@@ -2721,7 +2721,7 @@
      "cohort_hash": "CH-7958E5FA9154",
      "cohort": "insurance_type = mixed",
      "denominator": 6098,
-     "exec_ms": 71.9
+     "exec_ms": 189.6
     }
    },
    {
@@ -2747,7 +2747,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 23.202900076285005,
+    "exec_ms": 58.6652000201866,
     "rows_scanned": 1,
     "formatted": "3.8%",
     "citation": {
@@ -2756,7 +2756,7 @@
      "cohort_hash": "CH-8C5E424D5DE0",
      "cohort": "insurance_type = uninsured",
      "denominator": 1192,
-     "exec_ms": 23.2
+     "exec_ms": 58.7
     }
    }
   ],
@@ -2784,7 +2784,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 202.80820003245026,
+    "exec_ms": 523.2760000508279,
     "rows_scanned": 1,
     "formatted": "48.0%",
     "citation": {
@@ -2793,7 +2793,7 @@
      "cohort_hash": "CH-B7FDE1B4F5AB",
      "cohort": "rurality = urban",
      "denominator": 2495,
-     "exec_ms": 202.8
+     "exec_ms": 523.3
     }
    },
    {
@@ -2819,7 +2819,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 78.36939999833703,
+    "exec_ms": 152.19719999004155,
     "rows_scanned": 1,
     "formatted": "45.9%",
     "citation": {
@@ -2828,7 +2828,7 @@
      "cohort_hash": "CH-E3DEB3245B07",
      "cohort": "rurality = rural",
      "denominator": 353,
-     "exec_ms": 78.4
+     "exec_ms": 152.2
     }
    }
   ],
@@ -2856,7 +2856,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 38.91040000598878,
+    "exec_ms": 76.38379989657551,
     "rows_scanned": 1,
     "formatted": "0.0",
     "citation": {
@@ -2865,7 +2865,7 @@
      "cohort_hash": "CH-6773EEAE3ED6",
      "cohort": "severity = mild",
      "denominator": 18561,
-     "exec_ms": 38.9
+     "exec_ms": 76.4
     }
    },
    {
@@ -2891,7 +2891,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 69.66759997885674,
+    "exec_ms": 73.1341999489814,
     "rows_scanned": 1,
     "formatted": "0.0",
     "citation": {
@@ -2900,7 +2900,7 @@
      "cohort_hash": "CH-3D4B7CA48C99",
      "cohort": "severity = moderate",
      "denominator": 14395,
-     "exec_ms": 69.7
+     "exec_ms": 73.1
     }
    },
    {
@@ -2926,7 +2926,7 @@
     "categories": null,
     "suppressed": false,
     "suppression_reason": null,
-    "exec_ms": 96.16610000375658,
+    "exec_ms": 198.8236999604851,
     "rows_scanned": 1,
     "formatted": "331.0",
     "citation": {
@@ -2935,7 +2935,7 @@
      "cohort_hash": "CH-2CD6C63C8673",
      "cohort": "severity = severe",
      "denominator": 7044,
-     "exec_ms": 96.2
+     "exec_ms": 198.8
     }
    }
   ]
@@ -3436,7 +3436,7 @@
      "cohort_hash": "CH-A98871FFD11F",
      "cohort": "all patients",
      "denominator": 40000,
-     "exec_ms": 56.0
+     "exec_ms": 166.9
     },
     {
      "metric_id": "M01_time_to_diagnosis",
@@ -3444,7 +3444,7 @@
      "cohort_hash": "CH-B7FDE1B4F5AB",
      "cohort": "rurality = urban",
      "denominator": 32493,
-     "exec_ms": 64.2
+     "exec_ms": 154.9
     },
     {
      "metric_id": "M01_time_to_diagnosis",
@@ -3452,12 +3452,12 @@
      "cohort_hash": "CH-E3DEB3245B07",
      "cohort": "rurality = rural",
      "denominator": 7507,
-     "exec_ms": 19.2
+     "exec_ms": 54.9
     }
    ],
    "groundedness": 1.0,
    "claims": 11,
-   "latency_ms": 196.1,
+   "latency_ms": 495.3,
    "metric_id": "M01_time_to_diagnosis",
    "breakdown": "rurality",
    "planner": "deterministic-bm25",
@@ -3525,12 +3525,12 @@
      "cohort_hash": "CH-A98871FFD11F",
      "cohort": "all patients",
      "denominator": 2143,
-     "exec_ms": 238.7
+     "exec_ms": 347.9
     }
    ],
    "groundedness": 1.0,
    "claims": 6,
-   "latency_ms": 240.2,
+   "latency_ms": 350.9,
    "metric_id": "M04_brand_share_new_starts",
    "breakdown": null,
    "planner": "deterministic-bm25",
@@ -3607,7 +3607,7 @@
      "cohort_hash": "CH-2CD6C63C8673",
      "cohort": "severity = severe",
      "denominator": 7044,
-     "exec_ms": 152.7
+     "exec_ms": 164.8
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3615,7 +3615,7 @@
      "cohort_hash": "CH-2E4A9BAEEBD1",
      "cohort": "province = ON; severity = severe",
      "denominator": 2656,
-     "exec_ms": 76.8
+     "exec_ms": 103.2
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3623,7 +3623,7 @@
      "cohort_hash": "CH-2EF8B82BFF24",
      "cohort": "province = QC; severity = severe",
      "denominator": 1618,
-     "exec_ms": 72.1
+     "exec_ms": 83.5
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3631,7 +3631,7 @@
      "cohort_hash": "CH-331129EEB73E",
      "cohort": "province = BC; severity = severe",
      "denominator": 959,
-     "exec_ms": 59.0
+     "exec_ms": 64.1
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3639,7 +3639,7 @@
      "cohort_hash": "CH-FE2A411E1FBC",
      "cohort": "province = AB; severity = severe",
      "denominator": 834,
-     "exec_ms": 41.5
+     "exec_ms": 69.7
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3647,7 +3647,7 @@
      "cohort_hash": "CH-F00A0F4E7B7E",
      "cohort": "province = MB; severity = severe",
      "denominator": 252,
-     "exec_ms": 25.2
+     "exec_ms": 46.6
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3655,7 +3655,7 @@
      "cohort_hash": "CH-82076B9233CC",
      "cohort": "province = SK; severity = severe",
      "denominator": 223,
-     "exec_ms": 23.5
+     "exec_ms": 43.7
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3663,7 +3663,7 @@
      "cohort_hash": "CH-638A47748188",
      "cohort": "province = NS; severity = severe",
      "denominator": 179,
-     "exec_ms": 27.4
+     "exec_ms": 65.9
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3671,7 +3671,7 @@
      "cohort_hash": "CH-1709B1CBBB16",
      "cohort": "province = NB; severity = severe",
      "denominator": 161,
-     "exec_ms": 22.8
+     "exec_ms": 56.4
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3679,7 +3679,7 @@
      "cohort_hash": "CH-7F415A50C752",
      "cohort": "province = NL; severity = severe",
      "denominator": 86,
-     "exec_ms": 22.0
+     "exec_ms": 44.1
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3687,7 +3687,7 @@
      "cohort_hash": "CH-DE735D685A2C",
      "cohort": "province = PE; severity = severe",
      "denominator": 32,
-     "exec_ms": 18.0
+     "exec_ms": 39.4
     },
     {
      "metric_id": "M12_untreated_severe_gap",
@@ -3695,12 +3695,12 @@
      "cohort_hash": "CH-CC016BC7ECB8",
      "cohort": "province = TERR; severity = severe",
      "denominator": 44,
-     "exec_ms": 25.4
+     "exec_ms": 45.1
     }
    ],
    "groundedness": 1.0,
    "claims": 52,
-   "latency_ms": 574.0,
+   "latency_ms": 838.2,
    "metric_id": "M12_untreated_severe_gap",
    "breakdown": "province",
    "planner": "deterministic-bm25",
@@ -3764,7 +3764,7 @@
      "cohort_hash": "CH-A98871FFD11F",
      "cohort": "all patients",
      "denominator": 40000,
-     "exec_ms": 108.9
+     "exec_ms": 297.9
     },
     {
      "metric_id": "M03_advanced_therapy_initiation_rate",
@@ -3772,7 +3772,7 @@
      "cohort_hash": "CH-CA0DC968FF7F",
      "cohort": "insurance_type = public",
      "denominator": 17653,
-     "exec_ms": 120.2
+     "exec_ms": 299.1
     },
     {
      "metric_id": "M03_advanced_therapy_initiation_rate",
@@ -3780,7 +3780,7 @@
      "cohort_hash": "CH-DB75C4FAC04A",
      "cohort": "insurance_type = private",
      "denominator": 15057,
-     "exec_ms": 112.0
+     "exec_ms": 236.5
     },
     {
      "metric_id": "M03_advanced_therapy_initiation_rate",
@@ -3788,7 +3788,7 @@
      "cohort_hash": "CH-7958E5FA9154",
      "cohort": "insurance_type = mixed",
      "denominator": 6098,
-     "exec_ms": 78.6
+     "exec_ms": 133.4
     },
     {
      "metric_id": "M03_advanced_therapy_initiation_rate",
@@ -3796,12 +3796,12 @@
      "cohort_hash": "CH-8C5E424D5DE0",
      "cohort": "insurance_type = uninsured",
      "denominator": 1192,
-     "exec_ms": 19.7
+     "exec_ms": 43.6
     }
    ],
    "groundedness": 1.0,
    "claims": 24,
-   "latency_ms": 442.3,
+   "latency_ms": 1016.0,
    "metric_id": "M03_advanced_therapy_initiation_rate",
    "breakdown": "insurance_type",
    "planner": "deterministic-bm25",
@@ -3883,12 +3883,12 @@
      "cohort_hash": "CH-D6DB9A304DE8",
      "cohort": "province = ON",
      "denominator": 1146,
-     "exec_ms": 197.9
+     "exec_ms": 292.7
     }
    ],
    "groundedness": 1.0,
    "claims": 4,
-   "latency_ms": 200.0,
+   "latency_ms": 297.7,
    "metric_id": "M06_pdc_adherence",
    "breakdown": null,
    "planner": "deterministic-bm25",
@@ -3972,7 +3972,7 @@
      "cohort_hash": "CH-A98871FFD11F",
      "cohort": "all patients",
      "denominator": 40000,
-     "exec_ms": 84.8
+     "exec_ms": 149.3
     },
     {
      "metric_id": "M08_ed_visits_per_100_patients",
@@ -3980,7 +3980,7 @@
      "cohort_hash": "CH-6773EEAE3ED6",
      "cohort": "severity = mild",
      "denominator": 18561,
-     "exec_ms": 35.5
+     "exec_ms": 83.8
     },
     {
      "metric_id": "M08_ed_visits_per_100_patients",
@@ -3988,7 +3988,7 @@
      "cohort_hash": "CH-3D4B7CA48C99",
      "cohort": "severity = moderate",
      "denominator": 14395,
-     "exec_ms": 36.3
+     "exec_ms": 68.5
     },
     {
      "metric_id": "M08_ed_visits_per_100_patients",
@@ -3996,12 +3996,12 @@
      "cohort_hash": "CH-2CD6C63C8673",
      "cohort": "severity = severe",
      "denominator": 7044,
-     "exec_ms": 89.5
+     "exec_ms": 162.6
     }
    ],
    "groundedness": 1.0,
    "claims": 9,
-   "latency_ms": 247.9,
+   "latency_ms": 469.1,
    "metric_id": "M08_ed_visits_per_100_patients",
    "breakdown": "severity",
    "planner": "deterministic-bm25",
@@ -4073,12 +4073,12 @@
      "cohort_hash": "CH-A98871FFD11F",
      "cohort": "all patients",
      "denominator": 40000,
-     "exec_ms": 584.1
+     "exec_ms": 1264.3
     }
    ],
    "groundedness": 1.0,
    "claims": 7,
-   "latency_ms": 609.3,
+   "latency_ms": 1324.1,
    "metric_id": "M09_treatment_sequence",
    "breakdown": null,
    "planner": "deterministic-bm25",
@@ -4146,12 +4146,12 @@
      "cohort_hash": "CH-A98871FFD11F",
      "cohort": "all patients",
      "denominator": 3270,
-     "exec_ms": 12.0
+     "exec_ms": 32.5
     }
    ],
    "groundedness": null,
    "claims": null,
-   "latency_ms": 14.6,
+   "latency_ms": 38.5,
    "metric_id": "M13_quality_of_life_dlqi",
    "breakdown": null,
    "planner": "deterministic-bm25",
@@ -4211,7 +4211,7 @@
    "citations": [],
    "groundedness": null,
    "claims": null,
-   "latency_ms": 0.2,
+   "latency_ms": 0.3,
    "metric_id": null,
    "breakdown": null,
    "planner": "scope-guard",
@@ -4278,8 +4278,8 @@
    "groundedness": 1.0,
    "answered": 18,
    "refused": 8,
-   "p50_latency_ms": 192.6,
-   "p95_latency_ms": 546.7
+   "p50_latency_ms": 439.8,
+   "p95_latency_ms": 1375.8
   },
   "findings": [
    {
@@ -4326,10 +4326,10 @@
    },
    {
     "metric": "p95_latency_ms",
-    "value": 546.7,
+    "value": 1375.8,
     "threshold": 3000,
     "passed": true,
-    "assertion": "546.7 <= 3000"
+    "assertion": "1375.8 <= 3000"
    }
   ],
   "passed": true,
@@ -4351,7 +4351,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 198.3466000529006,
+    "latency_ms": 474.78839999530464,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4372,7 +4372,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 192.0342999510467,
+    "latency_ms": 439.8023000685498,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4393,7 +4393,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 194.24189999699593,
+    "latency_ms": 529.023899929598,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4414,7 +4414,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 163.9730999013409,
+    "latency_ms": 370.0056999223307,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4435,7 +4435,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 108.60739997588098,
+    "latency_ms": 222.91689994744956,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4456,7 +4456,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 379.1293000103906,
+    "latency_ms": 776.6341000096872,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4477,7 +4477,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 132.98900006338954,
+    "latency_ms": 323.5331999603659,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4498,7 +4498,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 275.8237000089139,
+    "latency_ms": 635.3413000470027,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4519,7 +4519,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 424.9989000381902,
+    "latency_ms": 974.6604000683874,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4540,7 +4540,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 613.6336999479681,
+    "latency_ms": 1643.9004000276327,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4561,7 +4561,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 373.3222000300884,
+    "latency_ms": 950.3680999623612,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4582,7 +4582,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 171.27070005517453,
+    "latency_ms": 420.3339000232518,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4603,7 +4603,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 192.64679995831102,
+    "latency_ms": 358.5078000323847,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4624,7 +4624,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 546.6970999259502,
+    "latency_ms": 1375.8067999733612,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4645,7 +4645,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 16.788800014182925,
+    "latency_ms": 46.95510002784431,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4666,7 +4666,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 0.17739995382726192,
+    "latency_ms": 0.39139995351433754,
     "planner": "scope-guard",
     "validation_errors": []
    },
@@ -4687,7 +4687,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 0.2671000547707081,
+    "latency_ms": 0.39709999691694975,
     "planner": "scope-guard",
     "validation_errors": []
    },
@@ -4708,7 +4708,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 0.36559998989105225,
+    "latency_ms": 0.40630006697028875,
     "planner": "scope-guard",
     "validation_errors": []
    },
@@ -4729,7 +4729,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 0.23480004165321589,
+    "latency_ms": 0.3594999434426427,
     "planner": "scope-guard",
     "validation_errors": []
    },
@@ -4750,7 +4750,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 0.24610001128166914,
+    "latency_ms": 0.33549999352544546,
     "planner": "scope-guard",
     "validation_errors": []
    },
@@ -4771,7 +4771,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 0.32599992118775845,
+    "latency_ms": 0.34309993498027325,
     "planner": "scope-guard",
     "validation_errors": []
    },
@@ -4792,7 +4792,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": null,
-    "latency_ms": 29.55640002619475,
+    "latency_ms": 73.7608999479562,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4813,7 +4813,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 415.2285000309348,
+    "latency_ms": 887.7095999196172,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4834,7 +4834,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 284.92430003825575,
+    "latency_ms": 508.8253999128938,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4855,7 +4855,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 233.04399999324232,
+    "latency_ms": 556.3158999430016,
     "planner": "deterministic-bm25",
     "validation_errors": []
    },
@@ -4876,7 +4876,7 @@
     "gate_ok": true,
     "suppression_ok": true,
     "groundedness": 1.0,
-    "latency_ms": 227.67699998803437,
+    "latency_ms": 574.8923000646755,
     "planner": "deterministic-bm25",
     "validation_errors": []
    }
@@ -4884,262 +4884,262 @@
  },
  "telemetry": {
   "summary": {
-   "answers": 35,
-   "answered": 28,
-   "refused_scope": 7,
-   "blocked": 10,
-   "suppressed": 1,
+   "answers": 70,
+   "answered": 56,
+   "refused_scope": 14,
+   "blocked": 20,
+   "suppressed": 2,
    "mean_groundedness": 1.0,
-   "claims": 354,
-   "verified": 354,
-   "mean_ms": 220.0,
+   "claims": 708,
+   "verified": 708,
+   "mean_ms": 352.5,
    "mean_rows": 17515.0,
    "in_tok": 0,
    "out_tok": 0,
-   "p50_ms": 196.1,
-   "p95_ms": 609.3,
+   "p50_ms": 275.8,
+   "p95_ms": 1016.0,
    "verification_rate": 1.0
   },
   "by_band": [
    {
     "band": "AMBER",
-    "n": 19
+    "n": 38
    },
    {
     "band": "n/a",
-    "n": 7
+    "n": 14
    },
    {
     "band": "GREEN",
-    "n": 6
+    "n": 12
    },
    {
     "band": "RED",
-    "n": 3
+    "n": 6
    }
   ],
   "stage_latency": {
-   "retrieval": 0.3,
-   "plan": 0.5,
-   "query": 218.5,
-   "ffu": 0.2,
-   "narrate": 0.1,
-   "verify": 0.3
+   "retrieval": 0.4,
+   "plan": 0.8,
+   "query": 350.3,
+   "ffu": 0.4,
+   "narrate": 0.2,
+   "verify": 0.5
   }
  },
  "privacy_audit": [
   {
-   "ts": "2026-09-10T19:08:05+00:00",
+   "ts": "2026-09-10T21:23:36+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:05+00:00",
+   "ts": "2026-09-10T21:23:36+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:05+00:00",
+   "ts": "2026-09-10T21:23:36+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=10 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:05+00:00",
+   "ts": "2026-09-10T21:23:36+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:08+00:00",
+   "ts": "2026-09-10T21:23:42+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:08+00:00",
+   "ts": "2026-09-10T21:23:42+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:08+00:00",
+   "ts": "2026-09-10T21:23:42+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=10 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:08+00:00",
+   "ts": "2026-09-10T21:23:42+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:13+00:00",
+   "ts": "2026-09-10T21:23:51+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:13+00:00",
+   "ts": "2026-09-10T21:23:51+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:13+00:00",
+   "ts": "2026-09-10T21:23:51+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=10 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:13+00:00",
+   "ts": "2026-09-10T21:23:51+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:56+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:56+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:56+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=10 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:56+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-A98871FFD11F"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=1 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=2 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=5 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=4 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=5 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=4 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=8 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=5 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=10 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=7 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=10 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=6 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=8 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:16+00:00",
+   "ts": "2026-09-10T21:23:57+00:00",
    "rule": "P2_numerator",
    "detail": "numerator=7 < 11",
    "cohort_hash": "CH-D6DB9A304DE8"
   },
   {
-   "ts": "2026-09-10T19:08:19+00:00",
+   "ts": "2026-09-10T21:24:04+00:00",
    "rule": "P1_primary",
    "detail": "denominator=10 < 11",
    "cohort_hash": "CH-138A452F07E1"
   },
   {
-   "ts": "2026-09-10T19:08:19+00:00",
+   "ts": "2026-09-10T21:24:04+00:00",
    "rule": "P1_primary",
    "detail": "denominator=6 < 11",
    "cohort_hash": "CH-D34EE80C12F5"
   },
   {
-   "ts": "2026-09-10T19:08:19+00:00",
+   "ts": "2026-09-10T21:24:04+00:00",
    "rule": "P1_primary",
    "detail": "denominator=4 < 11",
    "cohort_hash": "CH-94AF8AEA74F9"

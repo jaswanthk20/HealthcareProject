@@ -65,8 +65,8 @@ def main():
     ap.add_argument("--skip-generate", action="store_true")
     ap.add_argument("--patients", type=int, default=40000)
     ap.add_argument("--ask", default=None, help="ask one question and exit")
-    ap.add_argument("--planner", default=None,
-                    help="deterministic (default) or claude")
+    ap.add_argument("--planner", default=None, choices=("deterministic", "model"),
+                    help="deterministic (default) or model")
     args = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
 

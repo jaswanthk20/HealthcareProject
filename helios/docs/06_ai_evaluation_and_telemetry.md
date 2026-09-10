@@ -159,11 +159,11 @@ reported as good news; here it is a signal to re-check the guards.
 | **Purpose** | Translate a business question into a governed metric + cohort selection |
 | **Not for** | Generating figures, writing SQL, clinical decision support, prescriber targeting, promotional content |
 | **Default implementation** | Deterministic BM25 + controlled vocabulary — offline, free, reproducible |
-| **Optional implementation** | `claude-opus-5`, JSON-schema constrained, adaptive thinking |
+| **Optional implementation** | Configurable JSON chat endpoint via `ModelPlanner`, JSON-schema constrained |
 | **Input** | Question text + retrieved semantic-layer records |
 | **Output** | `{intent, metric_id, filters, breakdown, reasoning}` — every field validated against an enum |
 | **Guardrails** | Pre-plan scope guard; plan validation; read-only warehouse; small-cell suppression; FFU gate; numeric verification |
-| **Failure mode** | Degrades to the deterministic planner on error or missing credentials, and records why |
+| **Failure mode** | Degrades to the deterministic planner on error or missing endpoint/model configuration, and records why |
 | **Known limitations** | Vocabulary bounded by the registry; English only; no multi-hop reasoning across metrics; no causal claims |
 | **Human oversight** | Every Amber answer carries mandatory caveat text; RED is blocked entirely; refusals route to the product owner as intake |
 | **Evaluation** | 26 golden cases + 22 adversarial assertions, gated in CI |
