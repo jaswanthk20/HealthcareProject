@@ -9,9 +9,9 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from helios import llm
 
-QUESTION = 'How long do patients wait for a confirmed diagnosis?'
-RAW = dict(intent='metric_query', metric_id='M01_time_to_diagnosis',
-           filters={}, breakdown=None, reasoning='Diagnosis delay metric.')
+QUESTION = 'What percentage has diabetes?'
+RAW = dict(intent='metric_query', metric_id='diabetes',
+           filters={}, breakdown=None, reasoning='Published diabetes estimate.')
 
 
 class ModelPlannerTests(unittest.TestCase):

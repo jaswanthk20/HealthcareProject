@@ -1,0 +1,33 @@
+name: Refresh official healthcare data
+on:
+  schedule:
+    - cron: '23 13 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: official-healthcare-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download and validate official table
+        run: python helios/run_all.py
+      - name: Verify suppression, provenance and planner behavior
+        run: python -m unittest discover -s helios/tests
+      - name: Save only validated source updates
+        run: |
+          git add helios/outputs/dashboard_data.json helios/dashboard/helios_dashboard.html helios/docs/03_data_dictionary.md helios/docs/05a_dq_ffu_live_results.md
+          if git diff --cached --quiet; then
+            echo 'No official source changes'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Refresh published Statistics Canada health indicators'
+          git push

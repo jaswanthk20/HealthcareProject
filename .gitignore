@@ -1,4 +1,4 @@
-helios/data/helios.db
-
+helios/data/
 __pycache__/
 *.py[cod]
+/dist/
