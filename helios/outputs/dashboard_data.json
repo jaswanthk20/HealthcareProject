@@ -1,0 +1,5148 @@
+{
+ "meta": {
+  "generated_at": "2026-09-10T19:08:20+00:00",
+  "brand": "SANOVIA (fictional)",
+  "therapy_area": "Type 2 inflammation (atopic dermatitis / severe asthma)",
+  "launch_date": "2024-09-01",
+  "semantic_layer_version": "1.2.0",
+  "min_cell_size": 11,
+  "row_counts": {
+   "patient": 40000,
+   "claim_medical": 481842,
+   "claim_pharmacy": 305097,
+   "ehr_encounter": 110262,
+   "registry_enrollment": 3325,
+   "provider": 2222
+  },
+  "warehouse_queries": 217,
+  "warehouse_rows_scanned": 953267
+ },
+ "sources": [
+  {
+   "source_id": "CLM_NATL_PBM",
+   "source_name": "National PBM Pharmacy Claims",
+   "source_type": "pharmacy_claims",
+   "refresh_cadence_days": 7,
+   "publication_lag_days": 9,
+   "geography": "CA-ALL",
+   "consent_basis": "contractual_deidentified",
+   "license_expiry": "2027-03-31",
+   "last_refresh_date": "2026-09-01",
+   "record_count": 305097
+  },
+  {
+   "source_id": "CLM_PRIV_PAYER",
+   "source_name": "Private Payer Medical Claims",
+   "source_type": "medical_claims",
+   "refresh_cadence_days": 14,
+   "publication_lag_days": 21,
+   "geography": "CA-ALL",
+   "consent_basis": "contractual_deidentified",
+   "license_expiry": "2026-12-31",
+   "last_refresh_date": "2026-08-20",
+   "record_count": 404845
+  },
+  {
+   "source_id": "PROV_ADMIN_QC",
+   "source_name": "Provincial Administrative Claims (QC)",
+   "source_type": "medical_claims",
+   "refresh_cadence_days": 30,
+   "publication_lag_days": 62,
+   "geography": "CA-QC",
+   "consent_basis": "data_sharing_agreement",
+   "license_expiry": "2027-06-30",
+   "last_refresh_date": "2026-07-10",
+   "record_count": 76997
+  },
+  {
+   "source_id": "EHR_AMBULATORY",
+   "source_name": "Ambulatory EHR Network",
+   "source_type": "ehr",
+   "refresh_cadence_days": 1,
+   "publication_lag_days": 3,
+   "geography": "CA-ALL",
+   "consent_basis": "broad_consent",
+   "license_expiry": "2028-01-31",
+   "last_refresh_date": "2026-09-07",
+   "record_count": 110262
+  },
+  {
+   "source_id": "REG_T2INFLAM",
+   "source_name": "Type 2 Inflammation Patient Registry",
+   "source_type": "registry",
+   "refresh_cadence_days": 90,
+   "publication_lag_days": 45,
+   "geography": "CA-ALL",
+   "consent_basis": "explicit_informed_consent",
+   "license_expiry": "2027-09-30",
+   "last_refresh_date": "2026-07-27",
+   "record_count": 3325
+  }
+ ],
+ "dq": {
+  "checks": [
+   {
+    "check_id": "DQ-01",
+    "dimension": "completeness_days_supply",
+    "table": "claim_pharmacy",
+    "description": "Pharmacy claims with a missing or zero days_supply",
+    "value": 7.05,
+    "unit": "% of rows",
+    "rows_affected": 21506,
+    "score": 36.9,
+    "status": "FAIL",
+    "green_threshold": 2.0,
+    "red_threshold": 10.0,
+    "severity": "high",
+    "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+    "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 95.8
+   },
+   {
+    "check_id": "DQ-02",
+    "dimension": "plausibility_dates",
+    "table": "claim_medical",
+    "description": "Medical claims dated in the future",
+    "value": 2.49,
+    "unit": "% of rows",
+    "rows_affected": 11974,
+    "score": 51.2,
+    "status": "WARN",
+    "green_threshold": 0.1,
+    "red_threshold": 5.0,
+    "severity": "high",
+    "business_impact": "Future-dated claims inflate the most recent periods of every trend, which is precisely the window launch leadership reads first.",
+    "remediation": "Add a hard ingestion reject for service_date > ingest_date and quarantine the affected rows for vendor replay.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 58.8
+   },
+   {
+    "check_id": "DQ-03",
+    "dimension": "plausibility_units",
+    "table": "ehr_encounter",
+    "description": "Eosinophil counts implausible for 10^9/L (likely submitted in cells/uL)",
+    "value": 4.68,
+    "unit": "% of non-null labs",
+    "rows_affected": 3096,
+    "score": 44.3,
+    "status": "FAIL",
+    "green_threshold": 0.5,
+    "red_threshold": 8.0,
+    "severity": "high",
+    "business_impact": "Type 2 biomarker phenotyping silently mis-classifies these patients as eosinophilic, corrupting any biomarker-defined sub-cohort.",
+    "remediation": "Apply a UCUM unit-harmonisation rule at ingestion and back-convert values above 20 by dividing by 1000.",
+    "owner": "Clinical Data Products",
+    "exec_ms": 36.3
+   },
+   {
+    "check_id": "DQ-04",
+    "dimension": "completeness_clinical",
+    "table": "ehr_encounter",
+    "description": "Encounters for dermatology patients with no EASI severity score",
+    "value": 40.01,
+    "unit": "% of encounters",
+    "rows_affected": 29436,
+    "score": 50.0,
+    "status": "FAIL",
+    "green_threshold": 20.0,
+    "red_threshold": 60.0,
+    "severity": "medium",
+    "business_impact": "Severity-stratified effectiveness analyses can only be run on the minority of encounters that carry a score, and that minority skews to specialist care.",
+    "remediation": "Negotiate structured EASI capture in the next EHR network contract cycle; in the interim derive proxy severity from treatment intensity and document the proxy in the dictionary.",
+    "owner": "Clinical Data Products",
+    "exec_ms": 93.3
+   },
+   {
+    "check_id": "DQ-05",
+    "dimension": "timeliness",
+    "table": "source_metadata",
+    "description": "Worst publication lag across contracted sources against the 30-day SLA",
+    "value": 62,
+    "unit": "days",
+    "rows_affected": 2,
+    "score": 28.9,
+    "status": "FAIL",
+    "green_threshold": 30.0,
+    "red_threshold": 75.0,
+    "severity": "high",
+    "business_impact": "Any metric that depends on the QC provincial feed is structurally two months stale, so QC cannot be compared like-for-like against other provinces in a monthly review.",
+    "remediation": "Either re-contract for a 30-day feed or publish QC on a separate, explicitly lagged panel. Do not blend silently.",
+    "owner": "RWD Data Sourcing & Contracts",
+    "exec_ms": 0.8
+   },
+   {
+    "check_id": "DQ-06",
+    "dimension": "deduplication",
+    "table": "claim_medical",
+    "description": "Exact duplicate medical claim rows",
+    "value": 1.48,
+    "unit": "% of rows",
+    "rows_affected": 7110,
+    "score": 52.4,
+    "status": "WARN",
+    "green_threshold": 0.1,
+    "red_threshold": 3.0,
+    "severity": "high",
+    "business_impact": "Duplicates inflate utilisation and cost metrics (M08, M11), which are the two numbers the payer dossier rests on.",
+    "remediation": "Add a deterministic dedupe on the natural key (patient_id, service_date, proc_code, paid_amount) in the silver layer, and assert uniqueness in the pipeline tests.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 257.3
+   },
+   {
+    "check_id": "DQ-07",
+    "dimension": "conformance_codes",
+    "table": "patient",
+    "description": "Patient rows whose source-native sex coding is outside the M/F/U value set",
+    "value": 19.61,
+    "unit": "% of rows",
+    "rows_affected": 7846,
+    "score": 35.2,
+    "status": "FAIL",
+    "green_threshold": 0.5,
+    "red_threshold": 30.0,
+    "severity": "medium",
+    "business_impact": "Any analyst who reaches for sex_raw instead of the harmonised sex column silently drops or mis-buckets every patient sourced from the QC provincial feed.",
+    "remediation": "Harmonisation already exists in the `sex` column. Revoke read access to sex_raw outside the engineering role and mark it deprecated in the data dictionary.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 16.0
+   },
+   {
+    "check_id": "DQ-08",
+    "dimension": "representativeness",
+    "table": "registry_enrollment",
+    "description": "Registry rural share relative to the rural share of the patient spine",
+    "value": 0.413,
+    "unit": "ratio vs spine",
+    "rows_affected": 3325,
+    "score": 0.0,
+    "status": "FAIL",
+    "green_threshold": 0.85,
+    "red_threshold": 0.45,
+    "severity": "high",
+    "business_impact": "The registry systematically under-represents rural patients. Any PRO or quality-of-life finding drawn from it describes urban patients and must not be generalised.",
+    "remediation": "Either weight registry analyses to the claims spine by rurality and severity, or restrict registry-derived claims to urban populations in the label. Weighting is preferred.",
+    "owner": "Medical Affairs / Registry Operations",
+    "exec_ms": 12.8
+   },
+   {
+    "check_id": "DQ-09",
+    "dimension": "plausibility_dates",
+    "table": "claim_medical",
+    "description": "Claims dated before the patient's year of birth",
+    "value": 1.2,
+    "unit": "% of rows",
+    "rows_affected": 5806,
+    "score": 41.0,
+    "status": "FAIL",
+    "green_threshold": 0.05,
+    "red_threshold": 2.0,
+    "severity": "medium",
+    "business_impact": "A temporally impossible record anywhere in the asset undermines confidence in every date-based metric, which is most of the product.",
+    "remediation": "Add a cross-entity plausibility assertion (service_date >= date_of_birth) to the pipeline test suite.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 496.5
+   },
+   {
+    "check_id": "DQ-10",
+    "dimension": "referential_integrity",
+    "table": "claim_medical",
+    "description": "Claims referencing a provider_id absent from the provider dimension",
+    "value": 2.97,
+    "unit": "% of rows",
+    "rows_affected": 14322,
+    "score": 67.1,
+    "status": "WARN",
+    "green_threshold": 0.5,
+    "red_threshold": 8.0,
+    "severity": "medium",
+    "business_impact": "Specialty-based analyses (M07, field targeting) silently drop these claims, biasing specialist involvement downward.",
+    "remediation": "Backfill the provider dimension from the full national registry rather than the active-prescriber subset.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 306.9
+   },
+   {
+    "check_id": "DQ-11",
+    "dimension": "linkage_rate",
+    "table": "patient",
+    "description": "Patients on the spine linkable to at least one pharmacy claim",
+    "value": 100.0,
+    "unit": "% of patients",
+    "rows_affected": 40000,
+    "score": 100.0,
+    "status": "PASS",
+    "green_threshold": 90.0,
+    "red_threshold": 60.0,
+    "severity": "high",
+    "business_impact": "Unlinked patients cannot contribute to any treatment metric, so every therapy denominator is smaller than the epidemiological population it appears to describe.",
+    "remediation": "Review the deterministic linkage key and add a probabilistic fallback; report the linkage rate alongside every denominator.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 29.3
+   },
+   {
+    "check_id": "DQ-12",
+    "dimension": "coverage",
+    "table": "ehr_encounter",
+    "description": "Patients on the spine with any EHR encounter",
+    "value": 42.25,
+    "unit": "% of patients",
+    "rows_affected": 16899,
+    "score": 55.6,
+    "status": "WARN",
+    "green_threshold": 60.0,
+    "red_threshold": 20.0,
+    "severity": "medium",
+    "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
+    "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
+    "owner": "Clinical Data Products",
+    "exec_ms": 20.7
+   },
+   {
+    "check_id": "DQ-13",
+    "dimension": "governance",
+    "table": "source_metadata",
+    "description": "Contracted sources whose licence expires within 90 days",
+    "value": 0,
+    "unit": "sources",
+    "rows_affected": 0,
+    "score": 100.0,
+    "status": "PASS",
+    "green_threshold": 0,
+    "red_threshold": 2,
+    "severity": "high",
+    "business_impact": "An insight published from an asset whose licence has lapsed is a contractual breach, and the insight has to be withdrawn from every downstream deck.",
+    "remediation": "Trigger the renewal workflow 120 days out; block publication from any source inside 30 days of expiry.",
+    "owner": "RWD Data Sourcing & Contracts",
+    "exec_ms": 0.2
+   },
+   {
+    "check_id": "DQ-14",
+    "dimension": "completeness_index_dates",
+    "table": "patient",
+    "description": "Patients missing a confirmed diagnosis date or a first symptom date",
+    "value": 0.0,
+    "unit": "% of patients",
+    "rows_affected": 0,
+    "score": 100.0,
+    "status": "PASS",
+    "green_threshold": 2.0,
+    "red_threshold": 15.0,
+    "severity": "high",
+    "business_impact": "Time-to-event metrics (M01, M02) silently exclude these patients, and the exclusion is not random.",
+    "remediation": "Extend the index-date algorithm to fall back to the earliest condition-specific claim when no confirmed code is present.",
+    "owner": "RWD Data Engineering",
+    "exec_ms": 9.6
+   },
+   {
+    "check_id": "DQ-15",
+    "dimension": "governance",
+    "table": "registry_enrollment",
+    "description": "Registry rows retained despite withdrawn consent",
+    "value": 55,
+    "unit": "rows",
+    "rows_affected": 55,
+    "score": 0.0,
+    "status": "FAIL",
+    "green_threshold": 0,
+    "red_threshold": 1,
+    "severity": "critical",
+    "business_impact": "Processing data for a patient who has withdrawn consent is a privacy incident, reportable regardless of whether the row ever reached a report.",
+    "remediation": "Add a consent-withdrawal purge job on the registry refresh and enforce consent_flag = 1 in the cohort layer.",
+    "owner": "Privacy Office / Registry Operations",
+    "exec_ms": 0.7
+   }
+  ],
+  "dimensions": {
+   "completeness_days_supply": {
+    "dimension": "completeness_days_supply",
+    "score": 36.9,
+    "status": "FAIL",
+    "driver": "DQ-01",
+    "driver_description": "Pharmacy claims with a missing or zero days_supply"
+   },
+   "plausibility_dates": {
+    "dimension": "plausibility_dates",
+    "score": 41.0,
+    "status": "FAIL",
+    "driver": "DQ-09",
+    "driver_description": "Claims dated before the patient's year of birth"
+   },
+   "plausibility_units": {
+    "dimension": "plausibility_units",
+    "score": 44.3,
+    "status": "FAIL",
+    "driver": "DQ-03",
+    "driver_description": "Eosinophil counts implausible for 10^9/L (likely submitted in cells/uL)"
+   },
+   "completeness_clinical": {
+    "dimension": "completeness_clinical",
+    "score": 50.0,
+    "status": "FAIL",
+    "driver": "DQ-04",
+    "driver_description": "Encounters for dermatology patients with no EASI severity score"
+   },
+   "timeliness": {
+    "dimension": "timeliness",
+    "score": 28.9,
+    "status": "FAIL",
+    "driver": "DQ-05",
+    "driver_description": "Worst publication lag across contracted sources against the 30-day SLA"
+   },
+   "deduplication": {
+    "dimension": "deduplication",
+    "score": 52.4,
+    "status": "WARN",
+    "driver": "DQ-06",
+    "driver_description": "Exact duplicate medical claim rows"
+   },
+   "conformance_codes": {
+    "dimension": "conformance_codes",
+    "score": 35.2,
+    "status": "FAIL",
+    "driver": "DQ-07",
+    "driver_description": "Patient rows whose source-native sex coding is outside the M/F/U value set"
+   },
+   "representativeness": {
+    "dimension": "representativeness",
+    "score": 0.0,
+    "status": "FAIL",
+    "driver": "DQ-08",
+    "driver_description": "Registry rural share relative to the rural share of the patient spine"
+   },
+   "referential_integrity": {
+    "dimension": "referential_integrity",
+    "score": 67.1,
+    "status": "WARN",
+    "driver": "DQ-10",
+    "driver_description": "Claims referencing a provider_id absent from the provider dimension"
+   },
+   "linkage_rate": {
+    "dimension": "linkage_rate",
+    "score": 100.0,
+    "status": "PASS",
+    "driver": "DQ-11",
+    "driver_description": "Patients on the spine linkable to at least one pharmacy claim"
+   },
+   "coverage": {
+    "dimension": "coverage",
+    "score": 55.6,
+    "status": "WARN",
+    "driver": "DQ-12",
+    "driver_description": "Patients on the spine with any EHR encounter"
+   },
+   "governance": {
+    "dimension": "governance",
+    "score": 0.0,
+    "status": "FAIL",
+    "driver": "DQ-15",
+    "driver_description": "Registry rows retained despite withdrawn consent"
+   },
+   "completeness_index_dates": {
+    "dimension": "completeness_index_dates",
+    "score": 100.0,
+    "status": "PASS",
+    "driver": "DQ-14",
+    "driver_description": "Patients missing a confirmed diagnosis date or a first symptom date"
+   }
+  },
+  "overall": 47.0
+ },
+ "ffu": [
+  {
+   "metric_id": "M01_time_to_diagnosis",
+   "metric_label": "Time to confirmed diagnosis",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 40000,
+   "ffu_score": 74.0,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 56.6,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_index_dates",
+    "plausibility_dates",
+    "timeliness"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "timeliness",
+     "score": 28.9,
+     "check_id": "DQ-05",
+     "issue": "Worst publication lag across contracted sources against the 30-day SLA",
+     "observed": "62 days",
+     "business_impact": "Any metric that depends on the QC provincial feed is structurally two months stale, so QC cannot be compared like-for-like against other provinces in a monthly review.",
+     "remediation": "Either re-contract for a 30-day feed or publish QC on a separate, explicitly lagged panel. Do not blend silently.",
+     "owner": "RWD Data Sourcing & Contracts"
+    },
+    {
+     "dimension": "plausibility_dates",
+     "score": 41.0,
+     "check_id": "DQ-09",
+     "issue": "Claims dated before the patient's year of birth",
+     "observed": "1.2 % of rows",
+     "business_impact": "A temporally impossible record anywhere in the asset undermines confidence in every date-based metric, which is most of the product.",
+     "remediation": "Add a cross-entity plausibility assertion (service_date >= date_of_birth) to the pipeline test suite.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time."
+  },
+  {
+   "metric_id": "M02_time_to_advanced_therapy",
+   "metric_label": "Time from diagnosis to advanced therapy",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 3924,
+   "ffu_score": 85.8,
+   "band": "GREEN",
+   "permitted_use": "Decision-grade. May be quoted directly in a governance forum.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 76.3,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_index_dates",
+    "linkage_rate",
+    "timeliness"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "timeliness",
+     "score": 28.9,
+     "check_id": "DQ-05",
+     "issue": "Worst publication lag across contracted sources against the 30-day SLA",
+     "observed": "62 days",
+     "business_impact": "Any metric that depends on the QC provincial feed is structurally two months stale, so QC cannot be compared like-for-like against other provinces in a monthly review.",
+     "remediation": "Either re-contract for a 30-day feed or publish QC on a separate, explicitly lagged panel. Do not blend silently.",
+     "owner": "RWD Data Sourcing & Contracts"
+    },
+    {
+     "dimension": "completeness_index_dates",
+     "score": 100.0,
+     "check_id": "DQ-14",
+     "issue": "Patients missing a confirmed diagnosis date or a first symptom date",
+     "observed": "0.0 % of patients",
+     "business_impact": "Time-to-event metrics (M01, M02) silently exclude these patients, and the exclusion is not random.",
+     "remediation": "Extend the index-date algorithm to fall back to the earliest condition-specific claim when no confirmed code is present.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "Conditioned on initiation - it does not describe the patients who never escalate. Pair with M03 and M14."
+  },
+  {
+   "metric_id": "M03_advanced_therapy_initiation_rate",
+   "metric_label": "Advanced therapy initiation rate",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 40000,
+   "ffu_score": 78.5,
+   "band": "GREEN",
+   "permitted_use": "Decision-grade. May be quoted directly in a governance forum.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 64.2,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_days_supply",
+    "linkage_rate",
+    "coverage"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "coverage",
+     "score": 55.6,
+     "check_id": "DQ-12",
+     "issue": "Patients on the spine with any EHR encounter",
+     "observed": "42.25 % of patients",
+     "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
+     "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
+     "owner": "Clinical Data Products"
+    }
+   ],
+   "metric_caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims."
+  },
+  {
+   "metric_id": "M04_brand_share_new_starts",
+   "metric_label": "SANOVIA share of new advanced-therapy starts",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 2143,
+   "ffu_score": 64.3,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 40.5,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "timeliness",
+    "completeness_days_supply",
+    "coverage"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "timeliness",
+     "score": 28.9,
+     "check_id": "DQ-05",
+     "issue": "Worst publication lag across contracted sources against the 30-day SLA",
+     "observed": "62 days",
+     "business_impact": "Any metric that depends on the QC provincial feed is structurally two months stale, so QC cannot be compared like-for-like against other provinces in a monthly review.",
+     "remediation": "Either re-contract for a 30-day feed or publish QC on a separate, explicitly lagged panel. Do not blend silently.",
+     "owner": "RWD Data Sourcing & Contracts"
+    },
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "The two most recent months are systematically understated because of pharmacy claim run-off; never read the last bar."
+  },
+  {
+   "metric_id": "M05_persistence_12mo",
+   "metric_label": "12-month persistence rate on advanced therapy",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 2848,
+   "ffu_score": 64.3,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 40.5,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_days_supply",
+    "coverage",
+    "timeliness"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "timeliness",
+     "score": 28.9,
+     "check_id": "DQ-05",
+     "issue": "Worst publication lag across contracted sources against the 30-day SLA",
+     "observed": "62 days",
+     "business_impact": "Any metric that depends on the QC provincial feed is structurally two months stale, so QC cannot be compared like-for-like against other provinces in a monthly review.",
+     "remediation": "Either re-contract for a 30-day feed or publish QC on a separate, explicitly lagged panel. Do not blend silently.",
+     "owner": "RWD Data Sourcing & Contracts"
+    },
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "Initiators after 2025-06-30 are excluded to avoid right-censoring bias; the denominator is therefore not the full cohort."
+  },
+  {
+   "metric_id": "M06_pdc_adherence",
+   "metric_label": "Proportion of days covered (PDC), first year",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 2848,
+   "ffu_score": 62.1,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 36.9,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_days_supply"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "DIRECTLY exposed to defect DQ-01. Rows with NULL/0 days_supply are treated as zero coverage, which biases PDC downward. This metric is gated Amber until DQ-01 is remediated."
+  },
+  {
+   "metric_id": "M07_specialist_involvement_rate",
+   "metric_label": "Specialist involvement rate",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 40000,
+   "ffu_score": 71.6,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 52.6,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "conformance_codes",
+    "coverage",
+    "referential_integrity"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "conformance_codes",
+     "score": 35.2,
+     "check_id": "DQ-07",
+     "issue": "Patient rows whose source-native sex coding is outside the M/F/U value set",
+     "observed": "19.61 % of rows",
+     "business_impact": "Any analyst who reaches for sex_raw instead of the harmonised sex column silently drops or mis-buckets every patient sourced from the QC provincial feed.",
+     "remediation": "Harmonisation already exists in the `sex` column. Revoke read access to sex_raw outside the engineering role and mark it deprecated in the data dictionary.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "coverage",
+     "score": 55.6,
+     "check_id": "DQ-12",
+     "issue": "Patients on the spine with any EHR encounter",
+     "observed": "42.25 % of patients",
+     "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
+     "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
+     "owner": "Clinical Data Products"
+    }
+   ],
+   "metric_caveat": "Fee-code capture differs between the private payer and QC provincial feeds; cross-province comparison is directional only."
+  },
+  {
+   "metric_id": "M08_ed_visits_per_100_patients",
+   "metric_label": "ED visits per 100 patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 40000,
+   "ffu_score": 69.8,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 49.7,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "deduplication",
+    "plausibility_dates",
+    "coverage"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "plausibility_dates",
+     "score": 41.0,
+     "check_id": "DQ-09",
+     "issue": "Claims dated before the patient's year of birth",
+     "observed": "1.2 % of rows",
+     "business_impact": "A temporally impossible record anywhere in the asset undermines confidence in every date-based metric, which is most of the product.",
+     "remediation": "Add a cross-entity plausibility assertion (service_date >= date_of_birth) to the pipeline test suite.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "deduplication",
+     "score": 52.4,
+     "check_id": "DQ-06",
+     "issue": "Exact duplicate medical claim rows",
+     "observed": "1.48 % of rows",
+     "business_impact": "Duplicates inflate utilisation and cost metrics (M08, M11), which are the two numbers the payer dossier rests on.",
+     "remediation": "Add a deterministic dedupe on the natural key (patient_id, service_date, proc_code, paid_amount) in the silver layer, and assert uniqueness in the pipeline tests.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one."
+  },
+  {
+   "metric_id": "M09_treatment_sequence",
+   "metric_label": "Most common treatment sequences",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 40000,
+   "ffu_score": 67.8,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 46.2,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_days_supply",
+    "coverage"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "coverage",
+     "score": 55.6,
+     "check_id": "DQ-12",
+     "issue": "Patients on the spine with any EHR encounter",
+     "observed": "42.25 % of patients",
+     "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
+     "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
+     "owner": "Clinical Data Products"
+    }
+   ],
+   "metric_caveat": "Classes dispensed before enrolment_start are invisible, so sequences are truncated on the left."
+  },
+  {
+   "metric_id": "M10_switch_rate_12mo",
+   "metric_label": "12-month advanced-therapy switch rate",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 2848,
+   "ffu_score": 67.8,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 46.2,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "completeness_days_supply",
+    "coverage"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "coverage",
+     "score": 55.6,
+     "check_id": "DQ-12",
+     "issue": "Patients on the spine with any EHR encounter",
+     "observed": "42.25 % of patients",
+     "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
+     "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
+     "owner": "Clinical Data Products"
+    }
+   ],
+   "metric_caveat": "A dose-form change recorded under a different label would be misread as a switch."
+  },
+  {
+   "metric_id": "M11_annual_cost_per_patient",
+   "metric_label": "Direct medical cost per patient-year",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 40000,
+   "ffu_score": 69.8,
+   "band": "AMBER",
+   "permitted_use": "Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 49.7,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "deduplication",
+    "plausibility_dates",
+    "coverage"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "plausibility_dates",
+     "score": 41.0,
+     "check_id": "DQ-09",
+     "issue": "Claims dated before the patient's year of birth",
+     "observed": "1.2 % of rows",
+     "business_impact": "A temporally impossible record anywhere in the asset undermines confidence in every date-based metric, which is most of the product.",
+     "remediation": "Add a cross-entity plausibility assertion (service_date >= date_of_birth) to the pipeline test suite.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "deduplication",
+     "score": 52.4,
+     "check_id": "DQ-06",
+     "issue": "Exact duplicate medical claim rows",
+     "observed": "1.48 % of rows",
+     "business_impact": "Duplicates inflate utilisation and cost metrics (M08, M11), which are the two numbers the payer dossier rests on.",
+     "remediation": "Add a deterministic dedupe on the natural key (patient_id, service_date, proc_code, paid_amount) in the silver layer, and assert uniqueness in the pipeline tests.",
+     "owner": "RWD Data Engineering"
+    }
+   ],
+   "metric_caveat": "Paid amount, not list price, and excludes indirect costs and out-of-pocket spend."
+  },
+  {
+   "metric_id": "M12_untreated_severe_gap",
+   "metric_label": "Severe patients with no systemic or advanced therapy",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 7044,
+   "ffu_score": 78.5,
+   "band": "GREEN",
+   "permitted_use": "Decision-grade. May be quoted directly in a governance forum.",
+   "blocked": false,
+   "components": {
+    "asset_quality": 64.2,
+    "cohort_sufficiency": 100.0,
+    "governance": 100.0
+   },
+   "dimensions_assessed": [
+    "coverage",
+    "linkage_rate",
+    "completeness_days_supply"
+   ],
+   "veto_reasons": [],
+   "notes": [],
+   "top_drivers": [
+    {
+     "dimension": "completeness_days_supply",
+     "score": 36.9,
+     "check_id": "DQ-01",
+     "issue": "Pharmacy claims with a missing or zero days_supply",
+     "observed": "7.05 % of rows",
+     "business_impact": "PDC adherence (M06) treats these rows as zero days of coverage, understating adherence and weakening the support-programme business case.",
+     "remediation": "Impute days_supply from quantity x standard pack size for the 11 highest-volume molecules; escalate the residual to the PBM vendor as a contractual data-quality defect.",
+     "owner": "RWD Data Engineering"
+    },
+    {
+     "dimension": "coverage",
+     "score": 55.6,
+     "check_id": "DQ-12",
+     "issue": "Patients on the spine with any EHR encounter",
+     "observed": "42.25 % of patients",
+     "business_impact": "Clinical detail exists for a minority of the spine. Any metric requiring labs or severity scores runs on a subset that is not representative of the whole.",
+     "remediation": "Expand the EHR network contract, and always report EHR-derived metrics with their own coverage denominator.",
+     "owner": "Clinical Data Products"
+    }
+   ],
+   "metric_caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment."
+  },
+  {
+   "metric_id": "M13_quality_of_life_dlqi",
+   "metric_label": "Patient-reported quality of life (DLQI) at registry enrolment",
+   "cohort_hash": "CH-A98871FFD11F",
+   "cohort": "all patients",
+   "n": 3270,
+   "ffu_score": 36.1,
+   "band": "RED",
+   "permitted_use": "Not fit for this question. Publication is blocked until the named remediation lands.",
+   "blocked": true,
+   "components": {
+    "asset_quality": 18.5,
+    "cohort_sufficiency": 100.0,
+    "governance": 0.0
+   },
+   "dimensions_assessed": [
+    "representativeness",
+    "governance",
+    "coverage"
+   ],
+   "veto_reasons": [
+    "V1 - representativeness scores 0/100, driven by DQ-08 (Registry rural share relative to the rural share of the patient spine)",
+    "V1 - governance scores 0/100, driven by DQ-15 (Registry rows retained despite withdrawn consent)",
+    "V2/V4 - DQ-15: Registry rows retained despite withdrawn consent (55 rows)"
+   ],
+   "notes": [
+    "DQ-15: Registry rows retained despite withdrawn consent (55 rows)"
+   ],
+   "top_drivers": [
+    {
+     "dimension": "representativeness",
+     "score": 0.0,
+     "check_id": "DQ-08",
+     "issue": "Registry rural share relative to the rural share of the patient spine",
+     "observed": "0.413 ratio vs spine",
+     "business_impact": "The registry systematically under-represents rural patients. Any PRO or quality-of-life finding drawn from it describes urban patients and must not be generalised.",
+     "remediation": "Either weight registry analyses to the claims spine by rurality and severity, or restrict registry-derived claims to urban populations in the label. Weighting is preferred.",
+     "owner": "Medical Affairs / Registry Operations"
+    },
+    {
+     "dimension": "governance",
+     "score": 0.0,
+     "check_id": "DQ-15",
+     "issue": "Registry rows retained despite withdrawn consent",
+     "observed": "55 rows",
+     "business_impact": "Processing data for a patient who has withdrawn consent is a privacy incident, reportable regardless of whether the row ever reached a report.",
+     "remediation": "Add a consent-withdrawal purge job on the registry refresh and enforce consent_flag = 1 in the cohort layer.",
+     "owner": "Privacy Office / Registry Operations"
+    }
+   ],
+   "metric_caveat": "The registry is a volunteer, specialist-referred, predominantly urban population. This is the single least generalisable asset in the product and is included here precisely to demonstrate the Fitness-for-Use gate refusing it."
+  }
+ ],
+ "metrics": {
+  "M01_time_to_diagnosis": {
+   "metric_id": "M01_time_to_diagnosis",
+   "label": "Time to confirmed diagnosis",
+   "grain": "distribution",
+   "unit": "days",
+   "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+   "owner": "Medical Affairs / Epidemiology",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 161.0,
+   "n": 40000,
+   "numerator": null,
+   "denominator": 40000,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": [
+    104.0,
+    161.0,
+    243.0
+   ],
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 88.39330007322133,
+   "rows_scanned": 40000,
+   "formatted": "161 days",
+   "citation": {
+    "metric_id": "M01_time_to_diagnosis",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 40000,
+    "exec_ms": 88.4
+   }
+  },
+  "M02_time_to_advanced_therapy": {
+   "metric_id": "M02_time_to_advanced_therapy",
+   "label": "Time from diagnosis to advanced therapy",
+   "grain": "distribution",
+   "unit": "days",
+   "caveat": "Conditioned on initiation - it does not describe the patients who never escalate. Pair with M03 and M14.",
+   "owner": "Commercial Analytics",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 255.0,
+   "n": 3924,
+   "numerator": null,
+   "denominator": 3924,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": [
+    137.0,
+    255.0,
+    363.0
+   ],
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 165.78310006298125,
+   "rows_scanned": 3924,
+   "formatted": "255 days",
+   "citation": {
+    "metric_id": "M02_time_to_advanced_therapy",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 3924,
+    "exec_ms": 165.8
+   }
+  },
+  "M03_advanced_therapy_initiation_rate": {
+   "metric_id": "M03_advanced_therapy_initiation_rate",
+   "label": "Advanced therapy initiation rate",
+   "grain": "rate",
+   "unit": "% of patients",
+   "caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims.",
+   "owner": "Commercial Analytics",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.0981,
+   "n": 40000,
+   "numerator": 3924,
+   "denominator": 40000,
+   "ci": [
+    0.09522347109236967,
+    0.10105371844634703
+   ],
+   "spread": null,
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 138.5556000750512,
+   "rows_scanned": 1,
+   "formatted": "9.8%",
+   "citation": {
+    "metric_id": "M03_advanced_therapy_initiation_rate",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 40000,
+    "exec_ms": 138.6
+   }
+  },
+  "M04_brand_share_new_starts": {
+   "metric_id": "M04_brand_share_new_starts",
+   "label": "SANOVIA share of new advanced-therapy starts",
+   "grain": "series",
+   "unit": "% of new starts, monthly",
+   "caveat": "The two most recent months are systematically understated because of pharmacy claim run-off; never read the last bar.",
+   "owner": "Launch Excellence",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.15476190476190477,
+   "n": 2143,
+   "numerator": null,
+   "denominator": 2143,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": null,
+   "series": [
+    {
+     "period": "2024-09",
+     "value": null,
+     "n": 68,
+     "numerator": null,
+     "suppressed": true
+    },
+    {
+     "period": "2024-10",
+     "value": null,
+     "n": 91,
+     "numerator": null,
+     "suppressed": true
+    },
+    {
+     "period": "2024-11",
+     "value": null,
+     "n": 68,
+     "numerator": null,
+     "suppressed": true
+    },
+    {
+     "period": "2024-12",
+     "value": 0.12371134020618557,
+     "n": 97,
+     "numerator": 12,
+     "suppressed": false
+    },
+    {
+     "period": "2025-01",
+     "value": null,
+     "n": 89,
+     "numerator": null,
+     "suppressed": true
+    },
+    {
+     "period": "2025-02",
+     "value": 0.1797752808988764,
+     "n": 89,
+     "numerator": 16,
+     "suppressed": false
+    },
+    {
+     "period": "2025-03",
+     "value": 0.17894736842105263,
+     "n": 95,
+     "numerator": 17,
+     "suppressed": false
+    },
+    {
+     "period": "2025-04",
+     "value": 0.12844036697247707,
+     "n": 109,
+     "numerator": 14,
+     "suppressed": false
+    },
+    {
+     "period": "2025-05",
+     "value": 0.16091954022988506,
+     "n": 87,
+     "numerator": 14,
+     "suppressed": false
+    },
+    {
+     "period": "2025-06",
+     "value": 0.17,
+     "n": 100,
+     "numerator": 17,
+     "suppressed": false
+    },
+    {
+     "period": "2025-07",
+     "value": 0.224,
+     "n": 125,
+     "numerator": 28,
+     "suppressed": false
+    },
+    {
+     "period": "2025-08",
+     "value": 0.2549019607843137,
+     "n": 102,
+     "numerator": 26,
+     "suppressed": false
+    },
+    {
+     "period": "2025-09",
+     "value": 0.20952380952380953,
+     "n": 105,
+     "numerator": 22,
+     "suppressed": false
+    },
+    {
+     "period": "2025-10",
+     "value": 0.21818181818181817,
+     "n": 110,
+     "numerator": 24,
+     "suppressed": false
+    },
+    {
+     "period": "2025-11",
+     "value": 0.24,
+     "n": 100,
+     "numerator": 24,
+     "suppressed": false
+    },
+    {
+     "period": "2025-12",
+     "value": 0.28431372549019607,
+     "n": 102,
+     "numerator": 29,
+     "suppressed": false
+    },
+    {
+     "period": "2026-01",
+     "value": 0.25510204081632654,
+     "n": 98,
+     "numerator": 25,
+     "suppressed": false
+    },
+    {
+     "period": "2026-02",
+     "value": 0.27450980392156865,
+     "n": 102,
+     "numerator": 28,
+     "suppressed": false
+    },
+    {
+     "period": "2026-03",
+     "value": 0.2627118644067797,
+     "n": 118,
+     "numerator": 31,
+     "suppressed": false
+    },
+    {
+     "period": "2026-04",
+     "value": 0.2727272727272727,
+     "n": 99,
+     "numerator": 27,
+     "suppressed": false
+    },
+    {
+     "period": "2026-05",
+     "value": 0.3142857142857143,
+     "n": 105,
+     "numerator": 33,
+     "suppressed": false
+    },
+    {
+     "period": "2026-06",
+     "value": 0.15476190476190477,
+     "n": 84,
+     "numerator": 13,
+     "suppressed": false
+    }
+   ],
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 235.58279999997467,
+   "rows_scanned": 22,
+   "formatted": "15.5%",
+   "citation": {
+    "metric_id": "M04_brand_share_new_starts",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 2143,
+    "exec_ms": 235.6
+   }
+  },
+  "M05_persistence_12mo": {
+   "metric_id": "M05_persistence_12mo",
+   "label": "12-month persistence rate on advanced therapy",
+   "grain": "rate",
+   "unit": "% of initiators",
+   "caveat": "Initiators after 2025-06-30 are excluded to avoid right-censoring bias; the denominator is therefore not the full cohort.",
+   "owner": "Patient Support Programmes",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.47752808988764045,
+   "n": 2848,
+   "numerator": 1360,
+   "denominator": 2848,
+   "ci": [
+    0.4592257256090193,
+    0.4958909961612221
+   ],
+   "spread": null,
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 323.54510005097836,
+   "rows_scanned": 1,
+   "formatted": "47.8%",
+   "citation": {
+    "metric_id": "M05_persistence_12mo",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 2848,
+    "exec_ms": 323.5
+   }
+  },
+  "M06_pdc_adherence": {
+   "metric_id": "M06_pdc_adherence",
+   "label": "Proportion of days covered (PDC), first year",
+   "grain": "distribution",
+   "unit": "proportion 0-1",
+   "caveat": "DIRECTLY exposed to defect DQ-01. Rows with NULL/0 days_supply are treated as zero coverage, which biases PDC downward. This metric is gated Amber until DQ-01 is remediated.",
+   "owner": "Patient Support Programmes",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.6575342465753424,
+   "n": 2848,
+   "numerator": null,
+   "denominator": 2848,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": [
+    0.3835616438356164,
+    0.6575342465753424,
+    0.7671232876712328
+   ],
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 252.82729999162257,
+   "rows_scanned": 2848,
+   "formatted": "0.66",
+   "citation": {
+    "metric_id": "M06_pdc_adherence",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 2848,
+    "exec_ms": 252.8
+   }
+  },
+  "M07_specialist_involvement_rate": {
+   "metric_id": "M07_specialist_involvement_rate",
+   "label": "Specialist involvement rate",
+   "grain": "rate",
+   "unit": "% of patients",
+   "caveat": "Fee-code capture differs between the private payer and QC provincial feeds; cross-province comparison is directional only.",
+   "owner": "Medical Affairs",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.85015,
+   "n": 40000,
+   "numerator": 34006,
+   "denominator": 40000,
+   "ci": [
+    0.8466185227176068,
+    0.8536142269291169
+   ],
+   "spread": null,
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 154.87540001049638,
+   "rows_scanned": 1,
+   "formatted": "85.0%",
+   "citation": {
+    "metric_id": "M07_specialist_involvement_rate",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 40000,
+    "exec_ms": 154.9
+   }
+  },
+  "M08_ed_visits_per_100_patients": {
+   "metric_id": "M08_ed_visits_per_100_patients",
+   "label": "ED visits per 100 patients",
+   "grain": "rate",
+   "unit": "visits per 100 patients",
+   "caveat": "Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one.",
+   "owner": "Market Access / HEOR",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 58.2975,
+   "n": 40000,
+   "numerator": 23319,
+   "denominator": 40000,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": null,
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 81.99430000968277,
+   "rows_scanned": 1,
+   "formatted": "58.3",
+   "citation": {
+    "metric_id": "M08_ed_visits_per_100_patients",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 40000,
+    "exec_ms": 82.0
+   }
+  },
+  "M09_treatment_sequence": {
+   "metric_id": "M09_treatment_sequence",
+   "label": "Most common treatment sequences",
+   "grain": "category",
+   "unit": "% of patients",
+   "caveat": "Classes dispensed before enrolment_start are invisible, so sequences are truncated on the left.",
+   "owner": "Commercial Analytics",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.420125,
+   "n": 40000,
+   "numerator": null,
+   "denominator": 40000,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": null,
+   "series": null,
+   "categories": [
+    {
+     "value": "topical_cs",
+     "n": 16805,
+     "pct": 0.420125
+    },
+    {
+     "value": "inhaled_controller",
+     "n": 8196,
+     "pct": 0.2049
+    },
+    {
+     "value": "topical_cs > topical_tci",
+     "n": 2977,
+     "pct": 0.074425
+    },
+    {
+     "value": "topical_cs > systemic_ist",
+     "n": 2270,
+     "pct": 0.05675
+    },
+    {
+     "value": "topical_cs > systemic_cs",
+     "n": 2170,
+     "pct": 0.05425
+    },
+    {
+     "value": "inhaled_controller > topical_tci",
+     "n": 1427,
+     "pct": 0.035675
+    },
+    {
+     "value": "inhaled_controller > systemic_ist",
+     "n": 1159,
+     "pct": 0.028975
+    },
+    {
+     "value": "inhaled_controller > systemic_cs",
+     "n": 1072,
+     "pct": 0.0268
+    },
+    {
+     "value": "topical_cs > systemic_ist > biologic_il4r",
+     "n": 260,
+     "pct": 0.0065
+    },
+    {
+     "value": "topical_cs > systemic_cs > biologic_il4r",
+     "n": 257,
+     "pct": 0.006425
+    },
+    {
+     "value": "topical_cs > topical_tci > biologic_il4r",
+     "n": 203,
+     "pct": 0.005075
+    },
+    {
+     "value": "topical_cs > biologic_il4r",
+     "n": 157,
+     "pct": 0.003925
+    }
+   ],
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 808.5729000158608,
+   "rows_scanned": 40000,
+   "formatted": "42.0%",
+   "citation": {
+    "metric_id": "M09_treatment_sequence",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 40000,
+    "exec_ms": 808.6
+   }
+  },
+  "M10_switch_rate_12mo": {
+   "metric_id": "M10_switch_rate_12mo",
+   "label": "12-month advanced-therapy switch rate",
+   "grain": "rate",
+   "unit": "% of initiators",
+   "caveat": "A dose-form change recorded under a different label would be misread as a switch.",
+   "owner": "Commercial Analytics",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.18082865168539325,
+   "n": 2848,
+   "numerator": 515,
+   "denominator": 2848,
+   "ci": [
+    0.16712621011150713,
+    0.1953909787814524
+   ],
+   "spread": null,
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 434.94820001069456,
+   "rows_scanned": 1,
+   "formatted": "18.1%",
+   "citation": {
+    "metric_id": "M10_switch_rate_12mo",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 2848,
+    "exec_ms": 434.9
+   }
+  },
+  "M11_annual_cost_per_patient": {
+   "metric_id": "M11_annual_cost_per_patient",
+   "label": "Direct medical cost per patient-year",
+   "grain": "distribution",
+   "unit": "CAD",
+   "caveat": "Paid amount, not list price, and excludes indirect costs and out-of-pocket spend.",
+   "owner": "Market Access / HEOR",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 505.4000907721529,
+   "n": 40000,
+   "numerator": null,
+   "denominator": 40000,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": [
+    253.8865941385435,
+    505.4000907721529,
+    1152.50100132626
+   ],
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 539.5993000129238,
+   "rows_scanned": 40000,
+   "formatted": "$505",
+   "citation": {
+    "metric_id": "M11_annual_cost_per_patient",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 40000,
+    "exec_ms": 539.6
+   }
+  },
+  "M12_untreated_severe_gap": {
+   "metric_id": "M12_untreated_severe_gap",
+   "label": "Severe patients with no systemic or advanced therapy",
+   "grain": "rate",
+   "unit": "% of severe patients",
+   "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+   "owner": "Medical Affairs / Launch Excellence",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 0.39210675752413404,
+   "n": 7044,
+   "numerator": 2762,
+   "denominator": 7044,
+   "ci": [
+    0.3807670174743818,
+    0.40356411732297226
+   ],
+   "spread": null,
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 90.76299995649606,
+   "rows_scanned": 1,
+   "formatted": "39.2%",
+   "citation": {
+    "metric_id": "M12_untreated_severe_gap",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 7044,
+    "exec_ms": 90.8
+   }
+  },
+  "M13_quality_of_life_dlqi": {
+   "metric_id": "M13_quality_of_life_dlqi",
+   "label": "Patient-reported quality of life (DLQI) at registry enrolment",
+   "grain": "distribution",
+   "unit": "DLQI points",
+   "caveat": "The registry is a volunteer, specialist-referred, predominantly urban population. This is the single least generalisable asset in the product and is included here precisely to demonstrate the Fitness-for-Use gate refusing it.",
+   "owner": "Medical Affairs / HEOR",
+   "cohort_label": "all patients",
+   "cohort_hash": "CH-A98871FFD11F",
+   "value": 13.2,
+   "n": 3270,
+   "numerator": null,
+   "denominator": 3270,
+   "ci": [
+    null,
+    null
+   ],
+   "spread": [
+    8.3,
+    13.2,
+    18.1
+   ],
+   "series": null,
+   "categories": null,
+   "suppressed": false,
+   "suppression_reason": null,
+   "exec_ms": 12.606599950231612,
+   "rows_scanned": 3270,
+   "formatted": "13.2",
+   "citation": {
+    "metric_id": "M13_quality_of_life_dlqi",
+    "semantic_layer_version": "1.2.0",
+    "cohort_hash": "CH-A98871FFD11F",
+    "cohort": "all patients",
+    "denominator": 3270,
+    "exec_ms": 12.6
+   }
+  }
+ },
+ "breakouts": {
+  "M01_time_to_diagnosis__rurality": [
+   {
+    "group": "urban",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "rurality = urban",
+    "cohort_hash": "CH-B7FDE1B4F5AB",
+    "value": 150.0,
+    "n": 32493,
+    "numerator": null,
+    "denominator": 32493,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     99.0,
+     150.0,
+     222.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 61.89199991058558,
+    "rows_scanned": 32493,
+    "formatted": "150 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-B7FDE1B4F5AB",
+     "cohort": "rurality = urban",
+     "denominator": 32493,
+     "exec_ms": 61.9
+    }
+   },
+   {
+    "group": "rural",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "rurality = rural",
+    "cohort_hash": "CH-E3DEB3245B07",
+    "value": 227.0,
+    "n": 7507,
+    "numerator": null,
+    "denominator": 7507,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     145.0,
+     227.0,
+     334.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 34.66550004668534,
+    "rows_scanned": 7507,
+    "formatted": "227 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-E3DEB3245B07",
+     "cohort": "rurality = rural",
+     "denominator": 7507,
+     "exec_ms": 34.7
+    }
+   }
+  ],
+  "M01_time_to_diagnosis__province": [
+   {
+    "group": "ON",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = ON",
+    "cohort_hash": "CH-D6DB9A304DE8",
+    "value": 155.0,
+    "n": 15234,
+    "numerator": null,
+    "denominator": 15234,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     101.0,
+     155.0,
+     235.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 75.494599994272,
+    "rows_scanned": 15234,
+    "formatted": "155 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-D6DB9A304DE8",
+     "cohort": "province = ON",
+     "denominator": 15234,
+     "exec_ms": 75.5
+    }
+   },
+   {
+    "group": "QC",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = QC",
+    "cohort_hash": "CH-7267B71EC563",
+    "value": 160.0,
+    "n": 9142,
+    "numerator": null,
+    "denominator": 9142,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     103.0,
+     160.0,
+     240.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 49.376599956303835,
+    "rows_scanned": 9142,
+    "formatted": "160 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-7267B71EC563",
+     "cohort": "province = QC",
+     "denominator": 9142,
+     "exec_ms": 49.4
+    }
+   },
+   {
+    "group": "BC",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = BC",
+    "cohort_hash": "CH-9BCBBECD5FB9",
+    "value": 154.0,
+    "n": 5438,
+    "numerator": null,
+    "denominator": 5438,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     99.0,
+     154.0,
+     229.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 25.534500018693507,
+    "rows_scanned": 5438,
+    "formatted": "154 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-9BCBBECD5FB9",
+     "cohort": "province = BC",
+     "denominator": 5438,
+     "exec_ms": 25.5
+    }
+   },
+   {
+    "group": "AB",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = AB",
+    "cohort_hash": "CH-AC1CD4006CC9",
+    "value": 157.0,
+    "n": 4650,
+    "numerator": null,
+    "denominator": 4650,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     106.0,
+     157.0,
+     232.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 31.366499955765903,
+    "rows_scanned": 4650,
+    "formatted": "157 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-AC1CD4006CC9",
+     "cohort": "province = AB",
+     "denominator": 4650,
+     "exec_ms": 31.4
+    }
+   },
+   {
+    "group": "MB",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = MB",
+    "cohort_hash": "CH-E62F01D28331",
+    "value": 185.0,
+    "n": 1422,
+    "numerator": null,
+    "denominator": 1422,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     121.0,
+     185.0,
+     288.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 11.720099952071905,
+    "rows_scanned": 1422,
+    "formatted": "185 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-E62F01D28331",
+     "cohort": "province = MB",
+     "denominator": 1422,
+     "exec_ms": 11.7
+    }
+   },
+   {
+    "group": "SK",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = SK",
+    "cohort_hash": "CH-674F0C7A3E86",
+    "value": 192.0,
+    "n": 1304,
+    "numerator": null,
+    "denominator": 1304,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     125.0,
+     192.0,
+     296.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 8.207899983972311,
+    "rows_scanned": 1304,
+    "formatted": "192 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-674F0C7A3E86",
+     "cohort": "province = SK",
+     "denominator": 1304,
+     "exec_ms": 8.2
+    }
+   },
+   {
+    "group": "NS",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = NS",
+    "cohort_hash": "CH-C3C6D156D378",
+    "value": 170.0,
+    "n": 1055,
+    "numerator": null,
+    "denominator": 1055,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     111.0,
+     170.0,
+     267.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 5.958600086160004,
+    "rows_scanned": 1055,
+    "formatted": "170 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-C3C6D156D378",
+     "cohort": "province = NS",
+     "denominator": 1055,
+     "exec_ms": 6.0
+    }
+   },
+   {
+    "group": "NB",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = NB",
+    "cohort_hash": "CH-883D3C1C279F",
+    "value": 213.0,
+    "n": 831,
+    "numerator": null,
+    "denominator": 831,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     138.0,
+     213.0,
+     327.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 4.674499970860779,
+    "rows_scanned": 831,
+    "formatted": "213 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-883D3C1C279F",
+     "cohort": "province = NB",
+     "denominator": 831,
+     "exec_ms": 4.7
+    }
+   },
+   {
+    "group": "NL",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = NL",
+    "cohort_hash": "CH-CC386DFD38C1",
+    "value": 204.0,
+    "n": 521,
+    "numerator": null,
+    "denominator": 521,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     123.0,
+     204.0,
+     311.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 2.9441999504342675,
+    "rows_scanned": 521,
+    "formatted": "204 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-CC386DFD38C1",
+     "cohort": "province = NL",
+     "denominator": 521,
+     "exec_ms": 2.9
+    }
+   },
+   {
+    "group": "PE",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = PE",
+    "cohort_hash": "CH-138A452F07E1",
+    "value": 244.5,
+    "n": 160,
+    "numerator": null,
+    "denominator": 160,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     155.0,
+     244.5,
+     327.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 1.2863000156357884,
+    "rows_scanned": 160,
+    "formatted": "244 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-138A452F07E1",
+     "cohort": "province = PE",
+     "denominator": 160,
+     "exec_ms": 1.3
+    }
+   },
+   {
+    "group": "TERR",
+    "metric_id": "M01_time_to_diagnosis",
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+    "owner": "Medical Affairs / Epidemiology",
+    "cohort_label": "province = TERR",
+    "cohort_hash": "CH-2A13336AF107",
+    "value": 217.0,
+    "n": 243,
+    "numerator": null,
+    "denominator": 243,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": [
+     138.0,
+     217.0,
+     325.0
+    ],
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 2.041999949142337,
+    "rows_scanned": 243,
+    "formatted": "217 days",
+    "citation": {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2A13336AF107",
+     "cohort": "province = TERR",
+     "denominator": 243,
+     "exec_ms": 2.0
+    }
+   }
+  ],
+  "M12_untreated_severe_gap__province": [
+   {
+    "group": "ON",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = ON",
+    "cohort_hash": "CH-D6DB9A304DE8",
+    "value": 0.379894578313253,
+    "n": 2656,
+    "numerator": 1009,
+    "denominator": 2656,
+    "ci": [
+     0.36162164283130127,
+     0.3985144494833689
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 67.53559992648661,
+    "rows_scanned": 1,
+    "formatted": "38.0%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-D6DB9A304DE8",
+     "cohort": "province = ON",
+     "denominator": 2656,
+     "exec_ms": 67.5
+    }
+   },
+   {
+    "group": "QC",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = QC",
+    "cohort_hash": "CH-7267B71EC563",
+    "value": 0.3757725587144623,
+    "n": 1618,
+    "numerator": 608,
+    "denominator": 1618,
+    "ci": [
+     0.35249355176514185,
+     0.3996400721349974
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 35.4742999188602,
+    "rows_scanned": 1,
+    "formatted": "37.6%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-7267B71EC563",
+     "cohort": "province = QC",
+     "denominator": 1618,
+     "exec_ms": 35.5
+    }
+   },
+   {
+    "group": "BC",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = BC",
+    "cohort_hash": "CH-9BCBBECD5FB9",
+    "value": 0.3983315954118874,
+    "n": 959,
+    "numerator": 382,
+    "denominator": 959,
+    "ci": [
+     0.36781171908316934,
+     0.4296627564691956
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 28.108599944971502,
+    "rows_scanned": 1,
+    "formatted": "39.8%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-9BCBBECD5FB9",
+     "cohort": "province = BC",
+     "denominator": 959,
+     "exec_ms": 28.1
+    }
+   },
+   {
+    "group": "AB",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = AB",
+    "cohort_hash": "CH-AC1CD4006CC9",
+    "value": 0.37410071942446044,
+    "n": 834,
+    "numerator": 312,
+    "denominator": 834,
+    "ci": [
+     0.34190703456810495,
+     0.4074489296141462
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 39.790399954654276,
+    "rows_scanned": 1,
+    "formatted": "37.4%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-AC1CD4006CC9",
+     "cohort": "province = AB",
+     "denominator": 834,
+     "exec_ms": 39.8
+    }
+   },
+   {
+    "group": "MB",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = MB",
+    "cohort_hash": "CH-E62F01D28331",
+    "value": 0.4722222222222222,
+    "n": 252,
+    "numerator": 119,
+    "denominator": 252,
+    "ci": [
+     0.41146356458072886,
+     0.5338150765784884
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 20.298600080423057,
+    "rows_scanned": 1,
+    "formatted": "47.2%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-E62F01D28331",
+     "cohort": "province = MB",
+     "denominator": 252,
+     "exec_ms": 20.3
+    }
+   },
+   {
+    "group": "SK",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = SK",
+    "cohort_hash": "CH-674F0C7A3E86",
+    "value": 0.4484304932735426,
+    "n": 223,
+    "numerator": 100,
+    "denominator": 223,
+    "ci": [
+     0.3845773573988681,
+     0.5140303053931419
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 23.146299994550645,
+    "rows_scanned": 1,
+    "formatted": "44.8%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-674F0C7A3E86",
+     "cohort": "province = SK",
+     "denominator": 223,
+     "exec_ms": 23.1
+    }
+   },
+   {
+    "group": "NS",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = NS",
+    "cohort_hash": "CH-C3C6D156D378",
+    "value": 0.4134078212290503,
+    "n": 179,
+    "numerator": 74,
+    "denominator": 179,
+    "ci": [
+     0.34382406932692733,
+     0.48663026929185527
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 18.51860003080219,
+    "rows_scanned": 1,
+    "formatted": "41.3%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-C3C6D156D378",
+     "cohort": "province = NS",
+     "denominator": 179,
+     "exec_ms": 18.5
+    }
+   },
+   {
+    "group": "NB",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = NB",
+    "cohort_hash": "CH-883D3C1C279F",
+    "value": 0.484472049689441,
+    "n": 161,
+    "numerator": 78,
+    "denominator": 161,
+    "ci": [
+     0.40854034129884015,
+     0.5611275095349301
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 18.566099926829338,
+    "rows_scanned": 1,
+    "formatted": "48.4%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-883D3C1C279F",
+     "cohort": "province = NB",
+     "denominator": 161,
+     "exec_ms": 18.6
+    }
+   },
+   {
+    "group": "NL",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = NL",
+    "cohort_hash": "CH-CC386DFD38C1",
+    "value": 0.4883720930232558,
+    "n": 86,
+    "numerator": 42,
+    "denominator": 86,
+    "ci": [
+     0.38550397038221695,
+     0.59223462732753
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 18.222200102172792,
+    "rows_scanned": 1,
+    "formatted": "48.8%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-CC386DFD38C1",
+     "cohort": "province = NL",
+     "denominator": 86,
+     "exec_ms": 18.2
+    }
+   },
+   {
+    "group": "PE",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = PE",
+    "cohort_hash": "CH-138A452F07E1",
+    "value": 0.5,
+    "n": 32,
+    "numerator": 16,
+    "denominator": 32,
+    "ci": [
+     0.33630614316859386,
+     0.6636938568314061
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 16.6177999926731,
+    "rows_scanned": 1,
+    "formatted": "50.0%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-138A452F07E1",
+     "cohort": "province = PE",
+     "denominator": 32,
+     "exec_ms": 16.6
+    }
+   },
+   {
+    "group": "TERR",
+    "metric_id": "M12_untreated_severe_gap",
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "cohort_label": "province = TERR",
+    "cohort_hash": "CH-2A13336AF107",
+    "value": 0.5,
+    "n": 44,
+    "numerator": 22,
+    "denominator": 44,
+    "ci": [
+     0.35831521095931473,
+     0.6416847890406853
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 17.61350000742823,
+    "rows_scanned": 1,
+    "formatted": "50.0%",
+    "citation": {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2A13336AF107",
+     "cohort": "province = TERR",
+     "denominator": 44,
+     "exec_ms": 17.6
+    }
+   }
+  ],
+  "M03_advanced_therapy_initiation_rate__insurance_type": [
+   {
+    "group": "public",
+    "metric_id": "M03_advanced_therapy_initiation_rate",
+    "label": "Advanced therapy initiation rate",
+    "grain": "rate",
+    "unit": "% of patients",
+    "caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims.",
+    "owner": "Commercial Analytics",
+    "cohort_label": "insurance_type = public",
+    "cohort_hash": "CH-CA0DC968FF7F",
+    "value": 0.09969976774485922,
+    "n": 17653,
+    "numerator": 1760,
+    "denominator": 17653,
+    "ci": [
+     0.09536683695274592,
+     0.104206885224158
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 134.18009993620217,
+    "rows_scanned": 1,
+    "formatted": "10.0%",
+    "citation": {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-CA0DC968FF7F",
+     "cohort": "insurance_type = public",
+     "denominator": 17653,
+     "exec_ms": 134.2
+    }
+   },
+   {
+    "group": "private",
+    "metric_id": "M03_advanced_therapy_initiation_rate",
+    "label": "Advanced therapy initiation rate",
+    "grain": "rate",
+    "unit": "% of patients",
+    "caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims.",
+    "owner": "Commercial Analytics",
+    "cohort_label": "insurance_type = private",
+    "cohort_hash": "CH-DB75C4FAC04A",
+    "value": 0.09895729561001528,
+    "n": 15057,
+    "numerator": 1490,
+    "denominator": 15057,
+    "ci": [
+     0.09428948546208986,
+     0.10382969534119273
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 126.72179995570332,
+    "rows_scanned": 1,
+    "formatted": "9.9%",
+    "citation": {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-DB75C4FAC04A",
+     "cohort": "insurance_type = private",
+     "denominator": 15057,
+     "exec_ms": 126.7
+    }
+   },
+   {
+    "group": "mixed",
+    "metric_id": "M03_advanced_therapy_initiation_rate",
+    "label": "Advanced therapy initiation rate",
+    "grain": "rate",
+    "unit": "% of patients",
+    "caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims.",
+    "owner": "Commercial Analytics",
+    "cohort_label": "insurance_type = mixed",
+    "cohort_hash": "CH-7958E5FA9154",
+    "value": 0.1031485733027222,
+    "n": 6098,
+    "numerator": 629,
+    "denominator": 6098,
+    "ci": [
+     0.09576270151336788,
+     0.11103414486822288
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 71.9210000243038,
+    "rows_scanned": 1,
+    "formatted": "10.3%",
+    "citation": {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-7958E5FA9154",
+     "cohort": "insurance_type = mixed",
+     "denominator": 6098,
+     "exec_ms": 71.9
+    }
+   },
+   {
+    "group": "uninsured",
+    "metric_id": "M03_advanced_therapy_initiation_rate",
+    "label": "Advanced therapy initiation rate",
+    "grain": "rate",
+    "unit": "% of patients",
+    "caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims.",
+    "owner": "Commercial Analytics",
+    "cohort_label": "insurance_type = uninsured",
+    "cohort_hash": "CH-8C5E424D5DE0",
+    "value": 0.037751677852348994,
+    "n": 1192,
+    "numerator": 45,
+    "denominator": 1192,
+    "ci": [
+     0.028332383590407673,
+     0.05014088577904728
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 23.202900076285005,
+    "rows_scanned": 1,
+    "formatted": "3.8%",
+    "citation": {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-8C5E424D5DE0",
+     "cohort": "insurance_type = uninsured",
+     "denominator": 1192,
+     "exec_ms": 23.2
+    }
+   }
+  ],
+  "M05_persistence_12mo__rurality": [
+   {
+    "group": "urban",
+    "metric_id": "M05_persistence_12mo",
+    "label": "12-month persistence rate on advanced therapy",
+    "grain": "rate",
+    "unit": "% of initiators",
+    "caveat": "Initiators after 2025-06-30 are excluded to avoid right-censoring bias; the denominator is therefore not the full cohort.",
+    "owner": "Patient Support Programmes",
+    "cohort_label": "rurality = urban",
+    "cohort_hash": "CH-B7FDE1B4F5AB",
+    "value": 0.48016032064128256,
+    "n": 2495,
+    "numerator": 1198,
+    "denominator": 2495,
+    "ci": [
+     0.4606016942475464,
+     0.4997799481902936
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 202.80820003245026,
+    "rows_scanned": 1,
+    "formatted": "48.0%",
+    "citation": {
+     "metric_id": "M05_persistence_12mo",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-B7FDE1B4F5AB",
+     "cohort": "rurality = urban",
+     "denominator": 2495,
+     "exec_ms": 202.8
+    }
+   },
+   {
+    "group": "rural",
+    "metric_id": "M05_persistence_12mo",
+    "label": "12-month persistence rate on advanced therapy",
+    "grain": "rate",
+    "unit": "% of initiators",
+    "caveat": "Initiators after 2025-06-30 are excluded to avoid right-censoring bias; the denominator is therefore not the full cohort.",
+    "owner": "Patient Support Programmes",
+    "cohort_label": "rurality = rural",
+    "cohort_hash": "CH-E3DEB3245B07",
+    "value": 0.45892351274787535,
+    "n": 353,
+    "numerator": 162,
+    "denominator": 353,
+    "ci": [
+     0.4076605861295459,
+     0.5110708622217673
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 78.36939999833703,
+    "rows_scanned": 1,
+    "formatted": "45.9%",
+    "citation": {
+     "metric_id": "M05_persistence_12mo",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-E3DEB3245B07",
+     "cohort": "rurality = rural",
+     "denominator": 353,
+     "exec_ms": 78.4
+    }
+   }
+  ],
+  "M08_ed_visits_per_100_patients__severity": [
+   {
+    "group": "mild",
+    "metric_id": "M08_ed_visits_per_100_patients",
+    "label": "ED visits per 100 patients",
+    "grain": "rate",
+    "unit": "visits per 100 patients",
+    "caveat": "Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one.",
+    "owner": "Market Access / HEOR",
+    "cohort_label": "severity = mild",
+    "cohort_hash": "CH-6773EEAE3ED6",
+    "value": 0.0,
+    "n": 18561,
+    "numerator": 0,
+    "denominator": 18561,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 38.91040000598878,
+    "rows_scanned": 1,
+    "formatted": "0.0",
+    "citation": {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-6773EEAE3ED6",
+     "cohort": "severity = mild",
+     "denominator": 18561,
+     "exec_ms": 38.9
+    }
+   },
+   {
+    "group": "moderate",
+    "metric_id": "M08_ed_visits_per_100_patients",
+    "label": "ED visits per 100 patients",
+    "grain": "rate",
+    "unit": "visits per 100 patients",
+    "caveat": "Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one.",
+    "owner": "Market Access / HEOR",
+    "cohort_label": "severity = moderate",
+    "cohort_hash": "CH-3D4B7CA48C99",
+    "value": 0.0,
+    "n": 14395,
+    "numerator": 0,
+    "denominator": 14395,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 69.66759997885674,
+    "rows_scanned": 1,
+    "formatted": "0.0",
+    "citation": {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-3D4B7CA48C99",
+     "cohort": "severity = moderate",
+     "denominator": 14395,
+     "exec_ms": 69.7
+    }
+   },
+   {
+    "group": "severe",
+    "metric_id": "M08_ed_visits_per_100_patients",
+    "label": "ED visits per 100 patients",
+    "grain": "rate",
+    "unit": "visits per 100 patients",
+    "caveat": "Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one.",
+    "owner": "Market Access / HEOR",
+    "cohort_label": "severity = severe",
+    "cohort_hash": "CH-2CD6C63C8673",
+    "value": 331.04770017035776,
+    "n": 7044,
+    "numerator": 23319,
+    "denominator": 7044,
+    "ci": [
+     null,
+     null
+    ],
+    "spread": null,
+    "series": null,
+    "categories": null,
+    "suppressed": false,
+    "suppression_reason": null,
+    "exec_ms": 96.16610000375658,
+    "rows_scanned": 1,
+    "formatted": "331.0",
+    "citation": {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2CD6C63C8673",
+     "cohort": "severity = severe",
+     "denominator": 7044,
+     "exec_ms": 96.2
+    }
+   }
+  ]
+ },
+ "semantic_layer": {
+  "metrics": {
+   "M01_time_to_diagnosis": {
+    "label": "Time to confirmed diagnosis",
+    "grain": "distribution",
+    "unit": "days",
+    "definition": "Days from the first claim carrying a Type 2 symptom code to the first claim carrying a confirmed diagnosis code. Patients with no confirmed diagnosis are excluded.",
+    "decision_supported": "Where to place disease-awareness and referral-pathway investment; sizing the diagnostic odyssey.",
+    "owner": "Medical Affairs / Epidemiology",
+    "critical_dq": [
+     "completeness_index_dates",
+     "plausibility_dates",
+     "timeliness"
+    ],
+    "required_sources": [
+     "CLM_PRIV_PAYER",
+     "PROV_ADMIN_QC"
+    ],
+    "caveat": "Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time."
+   },
+   "M02_time_to_advanced_therapy": {
+    "label": "Time from diagnosis to advanced therapy",
+    "grain": "distribution",
+    "unit": "days",
+    "definition": "Days from confirmed diagnosis to the first dispensed biologic or JAK inhibitor. Only patients who initiate are included.",
+    "decision_supported": "Field-medical targeting; identifying where escalation is slowest relative to guidelines.",
+    "owner": "Commercial Analytics",
+    "critical_dq": [
+     "completeness_index_dates",
+     "linkage_rate",
+     "timeliness"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM",
+     "CLM_PRIV_PAYER"
+    ],
+    "caveat": "Conditioned on initiation - it does not describe the patients who never escalate. Pair with M03 and M14."
+   },
+   "M03_advanced_therapy_initiation_rate": {
+    "label": "Advanced therapy initiation rate",
+    "grain": "rate",
+    "unit": "% of patients",
+    "definition": "Share of the cohort with at least one dispensed biologic or JAK inhibitor at any point in their enrolment window.",
+    "decision_supported": "Market sizing and identification of under-treated segments.",
+    "owner": "Commercial Analytics",
+    "critical_dq": [
+     "completeness_days_supply",
+     "linkage_rate",
+     "coverage"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims."
+   },
+   "M04_brand_share_new_starts": {
+    "label": "SANOVIA share of new advanced-therapy starts",
+    "grain": "series",
+    "unit": "% of new starts, monthly",
+    "definition": "Of all patients starting a biologic or JAK inhibitor in a calendar month, the share whose start is SANOVIA. Restricted to months from the September 2024 launch onward.",
+    "decision_supported": "The core launch-tracking metric: is uptake on curve?",
+    "owner": "Launch Excellence",
+    "critical_dq": [
+     "timeliness",
+     "completeness_days_supply",
+     "coverage"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "The two most recent months are systematically understated because of pharmacy claim run-off; never read the last bar."
+   },
+   "M05_persistence_12mo": {
+    "label": "12-month persistence rate on advanced therapy",
+    "grain": "rate",
+    "unit": "% of initiators",
+    "definition": "Of patients who initiated advanced therapy on or before 2025-06-30, the share with at least one further advanced-therapy fill 300-390 days after their index fill.",
+    "decision_supported": "Adherence-programme design and value-story evidence.",
+    "owner": "Patient Support Programmes",
+    "critical_dq": [
+     "completeness_days_supply",
+     "coverage",
+     "timeliness"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "Initiators after 2025-06-30 are excluded to avoid right-censoring bias; the denominator is therefore not the full cohort."
+   },
+   "M06_pdc_adherence": {
+    "label": "Proportion of days covered (PDC), first year",
+    "grain": "distribution",
+    "unit": "proportion 0-1",
+    "definition": "Sum of days_supply dispensed in the 365 days from index advanced-therapy fill, divided by 365 and capped at 1.0.",
+    "decision_supported": "Quantifying the adherence gap the support programme must close.",
+    "owner": "Patient Support Programmes",
+    "critical_dq": [
+     "completeness_days_supply"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "DIRECTLY exposed to defect DQ-01. Rows with NULL/0 days_supply are treated as zero coverage, which biases PDC downward. This metric is gated Amber until DQ-01 is remediated."
+   },
+   "M07_specialist_involvement_rate": {
+    "label": "Specialist involvement rate",
+    "grain": "rate",
+    "unit": "% of patients",
+    "definition": "Share of the cohort with at least one specialist consult claim (fee code A605) at any point in their enrolment window.",
+    "decision_supported": "Referral-pathway strategy; where GPs manage alone.",
+    "owner": "Medical Affairs",
+    "critical_dq": [
+     "conformance_codes",
+     "coverage",
+     "referential_integrity"
+    ],
+    "required_sources": [
+     "CLM_PRIV_PAYER",
+     "PROV_ADMIN_QC"
+    ],
+    "caveat": "Fee-code capture differs between the private payer and QC provincial feeds; cross-province comparison is directional only."
+   },
+   "M08_ed_visits_per_100_patients": {
+    "label": "ED visits per 100 patients",
+    "grain": "rate",
+    "unit": "visits per 100 patients",
+    "definition": "Count of emergency department claims (fee code H101) divided by cohort size, expressed per 100 patients.",
+    "decision_supported": "Burden-of-illness and payer value story.",
+    "owner": "Market Access / HEOR",
+    "critical_dq": [
+     "deduplication",
+     "plausibility_dates",
+     "coverage"
+    ],
+    "required_sources": [
+     "CLM_PRIV_PAYER",
+     "PROV_ADMIN_QC"
+    ],
+    "caveat": "Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one.",
+    "scale": 100.0
+   },
+   "M09_treatment_sequence": {
+    "label": "Most common treatment sequences",
+    "grain": "category",
+    "unit": "% of patients",
+    "definition": "Ordered distinct therapeutic classes dispensed to each patient, concatenated in first-fill order.",
+    "decision_supported": "Where SANOVIA actually sits in the real pathway versus where the guideline says it should.",
+    "owner": "Commercial Analytics",
+    "critical_dq": [
+     "completeness_days_supply",
+     "coverage"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "Classes dispensed before enrolment_start are invisible, so sequences are truncated on the left."
+   },
+   "M10_switch_rate_12mo": {
+    "label": "12-month advanced-therapy switch rate",
+    "grain": "rate",
+    "unit": "% of initiators",
+    "definition": "Share of advanced-therapy initiators dispensed a second, different advanced-therapy brand within 365 days of index.",
+    "decision_supported": "Competitive dynamics and switch-capture opportunity.",
+    "owner": "Commercial Analytics",
+    "critical_dq": [
+     "completeness_days_supply",
+     "coverage"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "A dose-form change recorded under a different label would be misread as a switch."
+   },
+   "M11_annual_cost_per_patient": {
+    "label": "Direct medical cost per patient-year",
+    "grain": "distribution",
+    "unit": "CAD",
+    "definition": "Total paid amount across medical and pharmacy claims per patient, annualised over their enrolment window.",
+    "decision_supported": "Payer value dossier and budget-impact modelling.",
+    "owner": "Market Access / HEOR",
+    "critical_dq": [
+     "deduplication",
+     "plausibility_dates",
+     "coverage"
+    ],
+    "required_sources": [
+     "CLM_PRIV_PAYER",
+     "CLM_NATL_PBM",
+     "PROV_ADMIN_QC"
+    ],
+    "caveat": "Paid amount, not list price, and excludes indirect costs and out-of-pocket spend."
+   },
+   "M12_untreated_severe_gap": {
+    "label": "Severe patients with no systemic or advanced therapy",
+    "grain": "rate",
+    "unit": "% of severe patients",
+    "definition": "Share of patients recorded as severe who have no systemic immunosuppressant, systemic corticosteroid, biologic or JAK dispensing on record - the clinical white space.",
+    "decision_supported": "The single largest unmet-need signal for launch territory prioritisation.",
+    "owner": "Medical Affairs / Launch Excellence",
+    "critical_dq": [
+     "coverage",
+     "linkage_rate",
+     "completeness_days_supply"
+    ],
+    "required_sources": [
+     "CLM_NATL_PBM"
+    ],
+    "caveat": "Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment."
+   },
+   "M13_quality_of_life_dlqi": {
+    "label": "Patient-reported quality of life (DLQI) at registry enrolment",
+    "grain": "distribution",
+    "unit": "DLQI points",
+    "definition": "Dermatology Life Quality Index (0-30, higher is worse) recorded at enrolment in the consented Type 2 registry. Rows with withdrawn consent are excluded at the cohort layer.",
+    "decision_supported": "The humanistic-burden chapter of the payer dossier and the patient-voice narrative for launch.",
+    "owner": "Medical Affairs / HEOR",
+    "critical_dq": [
+     "representativeness",
+     "governance",
+     "coverage"
+    ],
+    "required_sources": [
+     "REG_T2INFLAM"
+    ],
+    "caveat": "The registry is a volunteer, specialist-referred, predominantly urban population. This is the single least generalisable asset in the product and is included here precisely to demonstrate the Fitness-for-Use gate refusing it."
+   }
+  },
+  "dimensions": {
+   "province": {
+    "column": "province",
+    "type": "categorical",
+    "values": [
+     "ON",
+     "QC",
+     "BC",
+     "AB",
+     "MB",
+     "SK",
+     "NS",
+     "NB",
+     "NL",
+     "PE",
+     "TERR"
+    ],
+    "description": "Province of residence."
+   },
+   "rurality": {
+    "column": "rurality",
+    "type": "categorical",
+    "values": [
+     "urban",
+     "rural"
+    ],
+    "description": "Urban vs rural residence - the health-equity lens."
+   },
+   "insurance_type": {
+    "column": "insurance_type",
+    "type": "categorical",
+    "values": [
+     "public",
+     "private",
+     "mixed",
+     "uninsured"
+    ],
+    "description": "Payer channel. Drives formulary access."
+   },
+   "severity": {
+    "column": "severity",
+    "type": "categorical",
+    "values": [
+     "mild",
+     "moderate",
+     "severe"
+    ],
+    "description": "Clinician-assigned disease severity."
+   },
+   "primary_condition": {
+    "column": "primary_condition",
+    "type": "categorical",
+    "values": [
+     "atopic_dermatitis",
+     "severe_asthma",
+     "both"
+    ],
+    "description": "Primary Type 2 inflammatory condition."
+   },
+   "sex": {
+    "column": "sex",
+    "type": "categorical",
+    "values": [
+     "F",
+     "M",
+     "U"
+    ],
+    "description": "Harmonised sex. Use `sex`, never `sex_raw`."
+   },
+   "age_band": {
+    "column": "age_band",
+    "type": "derived",
+    "values": [
+     "0-11",
+     "12-17",
+     "18-39",
+     "40-64",
+     "65+"
+    ],
+    "expr": "CASE WHEN (2026 - birth_year) < 12 THEN '0-11' WHEN (2026 - birth_year) < 18 THEN '12-17' WHEN (2026 - birth_year) < 40 THEN '18-39' WHEN (2026 - birth_year) < 65 THEN '40-64' ELSE '65+' END",
+    "description": "Age band as of the 2026 reference year."
+   },
+   "index_year": {
+    "column": "index_year",
+    "type": "derived",
+    "values": [
+     "2019",
+     "2020",
+     "2021",
+     "2022",
+     "2023",
+     "2024",
+     "2025",
+     "2026"
+    ],
+    "expr": "substr(index_dx_date, 1, 4)",
+    "description": "Calendar year of confirmed diagnosis."
+   }
+  },
+  "tables": {
+   "patient": {
+    "grain": "one row per patient",
+    "description": "De-identified patient spine with enrollment window, geography, payer type and clinician-assigned severity.",
+    "steward": "RWD Data Engineering",
+    "pii_class": "de-identified / indirect identifiers present",
+    "key_columns": {
+     "patient_id": "Surrogate key. Never a real health card number.",
+     "birth_year": "Year only - full DOB is suppressed at ingestion.",
+     "sex": "Harmonised M/F/U.",
+     "sex_raw": "Source-native coding; QC admin source uses 1/2. Do NOT use for analysis - demonstrates the conformance defect.",
+     "province": "Two-letter province code; TERR groups the territories.",
+     "rurality": "urban | rural, derived from postal FSA (synthetic here).",
+     "insurance_type": "public | private | mixed | uninsured.",
+     "enrollment_start": "First date of continuous data capture.",
+     "enrollment_end": "Last date of continuous data capture.",
+     "first_symptom_date": "First claim carrying a Type 2 symptom code.",
+     "index_dx_date": "First claim carrying a confirmed diagnosis code.",
+     "severity": "mild | moderate | severe.",
+     "primary_condition": "atopic_dermatitis | severe_asthma | both."
+    }
+   },
+   "claim_medical": {
+    "grain": "one row per medical claim line",
+    "description": "Adjudicated medical claims from private payer and provincial administrative sources.",
+    "steward": "RWD Data Engineering",
+    "pii_class": "de-identified",
+    "key_columns": {
+     "service_date": "Date of service. Subject to future-date defect DQ-02.",
+     "dx_code": "ICD-10-CA style diagnosis code (illustrative).",
+     "proc_code": "Fee code. A605 = specialist consult, H101 = ED visit.",
+     "paid_amount": "Amount paid in CAD. Not list price.",
+     "ingest_date": "When the row landed in HELIOS - drives latency KPIs."
+    }
+   },
+   "claim_pharmacy": {
+    "grain": "one row per dispensed prescription",
+    "description": "National PBM pharmacy dispensing records.",
+    "steward": "RWD Data Engineering",
+    "pii_class": "de-identified",
+    "key_columns": {
+     "fill_date": "Dispensing date.",
+     "drug_name": "Brand or molecule label. SANOVIA is the fictional launch brand used throughout this demo.",
+     "drug_class": "Therapeutic class. biologic_* and jak are advanced therapy.",
+     "days_supply": "Days of therapy dispensed. NULL/0 on ~7% of rows (defect DQ-01) - materially affects PDC adherence."
+    }
+   },
+   "ehr_encounter": {
+    "grain": "one row per ambulatory encounter",
+    "description": "Ambulatory EHR network - the only source with clinical severity scores and labs. Covers ~42% of the spine.",
+    "steward": "Clinical Data Products",
+    "pii_class": "de-identified, broad consent",
+    "key_columns": {
+     "easi_score": "Eczema Area and Severity Index (0-72). ~40% missing.",
+     "eosinophil_count": "Blood eosinophils in 10^9/L. ~5% submitted in cells/uL instead (defect DQ-03).",
+     "fev1_pct_predicted": "Spirometry, asthma patients only."
+    }
+   },
+   "registry_enrollment": {
+    "grain": "one row per registry enrolment",
+    "description": "Consented Type 2 inflammation patient registry. Rich PRO data but strongly selected - see DQ-08.",
+    "steward": "Medical Affairs / Registry Operations",
+    "pii_class": "explicit informed consent",
+    "key_columns": {
+     "pro_dlqi_score": "Dermatology Life Quality Index (0-30).",
+     "consent_flag": "0 = consent withdrawn; rows MUST be excluded."
+    }
+   },
+   "provider": {
+    "grain": "one row per prescriber",
+    "description": "Prescriber reference dimension.",
+    "steward": "RWD Data Engineering",
+    "pii_class": "professional, non-patient",
+    "key_columns": {
+     "specialty": "GP | DERM | RESP | ALLERGY | PEDS | IM"
+    }
+   },
+   "source_metadata": {
+    "grain": "one row per contracted data source",
+    "description": "Contract, cadence, lag, consent basis and licence expiry for each asset. Drives the timeliness and licence checks.",
+    "steward": "RWD Data Sourcing & Contracts",
+    "pii_class": "metadata only",
+    "key_columns": {
+     "publication_lag_days": "Days between service and availability.",
+     "license_expiry": "Contract end date - insights past this cannot ship.",
+     "consent_basis": "Legal basis for processing."
+    }
+   }
+  },
+  "business_questions": [
+   {
+    "id": "BQ-01",
+    "question": "How long do patients wait for a confirmed diagnosis, and where is the wait worst?",
+    "metric": "M01_time_to_diagnosis",
+    "breakdown": "rurality",
+    "decision": "Referral-pathway investment",
+    "stakeholder": "Medical Affairs"
+   },
+   {
+    "id": "BQ-02",
+    "question": "Is SANOVIA uptake tracking to the launch curve?",
+    "metric": "M04_brand_share_new_starts",
+    "breakdown": null,
+    "decision": "Launch course-correction",
+    "stakeholder": "Launch Excellence"
+   },
+   {
+    "id": "BQ-03",
+    "question": "Which severe patients are receiving nothing at all?",
+    "metric": "M12_untreated_severe_gap",
+    "breakdown": "province",
+    "decision": "Territory prioritisation",
+    "stakeholder": "Launch Excellence"
+   },
+   {
+    "id": "BQ-04",
+    "question": "How adherent are patients in their first year?",
+    "metric": "M06_pdc_adherence",
+    "breakdown": null,
+    "decision": "Support-programme design",
+    "stakeholder": "Patient Support"
+   },
+   {
+    "id": "BQ-05",
+    "question": "Does payer channel change access to advanced therapy?",
+    "metric": "M03_advanced_therapy_initiation_rate",
+    "breakdown": "insurance_type",
+    "decision": "Market access negotiation",
+    "stakeholder": "Market Access"
+   },
+   {
+    "id": "BQ-06",
+    "question": "What does the real treatment pathway look like?",
+    "metric": "M09_treatment_sequence",
+    "breakdown": null,
+    "decision": "Positioning and messaging",
+    "stakeholder": "Commercial"
+   },
+   {
+    "id": "BQ-07",
+    "question": "What is the burden of illness we can reduce?",
+    "metric": "M08_ed_visits_per_100_patients",
+    "breakdown": "severity",
+    "decision": "Payer value dossier",
+    "stakeholder": "HEOR"
+   },
+   {
+    "id": "BQ-08",
+    "question": "Do patients stay on advanced therapy for a year?",
+    "metric": "M05_persistence_12mo",
+    "breakdown": "rurality",
+    "decision": "Support-programme design",
+    "stakeholder": "Patient Support"
+   }
+  ]
+ },
+ "agent_answers": [
+  {
+   "question": "How long do patients wait for a confirmed diagnosis?",
+   "status": "answered",
+   "narrative": "Across 40,000 patients, the median time to confirmed diagnosis is 161 days, with an interquartile range of 104 to 243 days.\n\nBroken out by rurality:\n  - urban: 150 days (n=32,493)\n  - rural: 227 days (n=7,507)\n\nThe spread is material: rural at 227 days against urban at 150 days, a ratio of 1.51x.\n\nHow to read this: Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.\nCaveat carried by this metric: Left-censored: symptoms occurring before enrolment_start are invisible, so this is a floor, not a true onset-to-diagnosis time.",
+   "band": "AMBER",
+   "ffu_score": 74.0,
+   "citations": [
+    {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-A98871FFD11F",
+     "cohort": "all patients",
+     "denominator": 40000,
+     "exec_ms": 56.0
+    },
+    {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-B7FDE1B4F5AB",
+     "cohort": "rurality = urban",
+     "denominator": 32493,
+     "exec_ms": 64.2
+    },
+    {
+     "metric_id": "M01_time_to_diagnosis",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-E3DEB3245B07",
+     "cohort": "rurality = rural",
+     "denominator": 7507,
+     "exec_ms": 19.2
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 11,
+   "latency_ms": 196.1,
+   "metric_id": "M01_time_to_diagnosis",
+   "breakdown": "rurality",
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "BQ-01",
+     "kind": "business_question",
+     "score": 42.705,
+     "matched": [
+      "confirmed",
+      "delay",
+      "diagnosis",
+      "duration",
+      "lag",
+      "long",
+      "patients",
+      "time",
+      "wait"
+     ]
+    },
+    {
+     "doc_id": "M01_time_to_diagnosis",
+     "kind": "metric",
+     "score": 14.943,
+     "matched": [
+      "confirmed",
+      "delay",
+      "diagnosis",
+      "patients",
+      "time"
+     ]
+    },
+    {
+     "doc_id": "M02_time_to_advanced_therapy",
+     "kind": "metric",
+     "score": 10.118,
+     "matched": [
+      "confirmed",
+      "diagnosis",
+      "patients",
+      "time"
+     ]
+    },
+    {
+     "doc_id": "DIM_index_year",
+     "kind": "dimension",
+     "score": 5.189,
+     "matched": [
+      "confirmed",
+      "diagnosis"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "Is SANOVIA uptake tracking to the launch curve?",
+   "status": "answered",
+   "narrative": "SANOVIA share of new advanced-therapy starts reached 15.5% in 2026-06, up from 12.4% in 2024-12. The series covers 22 periods and 2,143 new starts in total.\n4 of the 22 periods are suppressed because the monthly count of new starts falls below the minimum cell size.\n\nHow to read this: Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.\nCaveat carried by this metric: The two most recent months are systematically understated because of pharmacy claim run-off; never read the last bar.",
+   "band": "AMBER",
+   "ffu_score": 64.3,
+   "citations": [
+    {
+     "metric_id": "M04_brand_share_new_starts",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-A98871FFD11F",
+     "cohort": "all patients",
+     "denominator": 2143,
+     "exec_ms": 238.7
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 6,
+   "latency_ms": 240.2,
+   "metric_id": "M04_brand_share_new_starts",
+   "breakdown": null,
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "BQ-02",
+     "kind": "business_question",
+     "score": 33.987,
+     "matched": [
+      "brand",
+      "curve",
+      "launch",
+      "new",
+      "sanovia",
+      "share",
+      "starts",
+      "tracking",
+      "uptake"
+     ]
+    },
+    {
+     "doc_id": "M04_brand_share_new_starts",
+     "kind": "metric",
+     "score": 24.606,
+     "matched": [
+      "brand",
+      "curve",
+      "launch",
+      "new",
+      "sanovia",
+      "share",
+      "starts",
+      "tracking",
+      "uptake"
+     ]
+    },
+    {
+     "doc_id": "TBL_claim_pharmacy",
+     "kind": "table",
+     "score": 11.634,
+     "matched": [
+      "brand",
+      "launch",
+      "new",
+      "sanovia",
+      "share",
+      "starts"
+     ]
+    },
+    {
+     "doc_id": "M12_untreated_severe_gap",
+     "kind": "metric",
+     "score": 8.886,
+     "matched": [
+      "brand",
+      "launch",
+      "new",
+      "share",
+      "starts"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "How many severe patients are getting no systemic therapy at all?",
+   "status": "answered",
+   "narrative": "Severe patients with no systemic or advanced therapy is 39.2% (95% CI 38.1 to 40.4), based on 2,762 of 7,044 patients.\n\nBroken out by province:\n  - ON: 38.0% [95% CI 36.2-39.9] (n=2,656)\n  - QC: 37.6% [95% CI 35.2-40.0] (n=1,618)\n  - BC: 39.8% [95% CI 36.8-43.0] (n=959)\n  - AB: 37.4% [95% CI 34.2-40.7] (n=834)\n  - MB: 47.2% [95% CI 41.1-53.4] (n=252)\n  - SK: 44.8% [95% CI 38.5-51.4] (n=223)\n  - NS: 41.3% [95% CI 34.4-48.7] (n=179)\n  - NB: 48.4% [95% CI 40.9-56.1] (n=161)\n  - NL: 48.8% [95% CI 38.6-59.2] (n=86)\n  - PE: 50.0% [95% CI 33.6-66.4] (n=32)\n  - TERR: 50.0% [95% CI 35.8-64.2] (n=44)\n\nThe spread is material: PE at 50.0% against AB at 37.4%, a ratio of 1.34x.\n\nHow to read this: Decision-grade. May be quoted directly in a governance forum.\nCaveat carried by this metric: Absence of a claim is not absence of treatment - samples, hospital-supplied product and cash purchases are invisible. Treat as an upper bound on true under-treatment.",
+   "band": "GREEN",
+   "ffu_score": 78.5,
+   "citations": [
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2CD6C63C8673",
+     "cohort": "severity = severe",
+     "denominator": 7044,
+     "exec_ms": 152.7
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2E4A9BAEEBD1",
+     "cohort": "province = ON; severity = severe",
+     "denominator": 2656,
+     "exec_ms": 76.8
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2EF8B82BFF24",
+     "cohort": "province = QC; severity = severe",
+     "denominator": 1618,
+     "exec_ms": 72.1
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-331129EEB73E",
+     "cohort": "province = BC; severity = severe",
+     "denominator": 959,
+     "exec_ms": 59.0
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-FE2A411E1FBC",
+     "cohort": "province = AB; severity = severe",
+     "denominator": 834,
+     "exec_ms": 41.5
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-F00A0F4E7B7E",
+     "cohort": "province = MB; severity = severe",
+     "denominator": 252,
+     "exec_ms": 25.2
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-82076B9233CC",
+     "cohort": "province = SK; severity = severe",
+     "denominator": 223,
+     "exec_ms": 23.5
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-638A47748188",
+     "cohort": "province = NS; severity = severe",
+     "denominator": 179,
+     "exec_ms": 27.4
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-1709B1CBBB16",
+     "cohort": "province = NB; severity = severe",
+     "denominator": 161,
+     "exec_ms": 22.8
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-7F415A50C752",
+     "cohort": "province = NL; severity = severe",
+     "denominator": 86,
+     "exec_ms": 22.0
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-DE735D685A2C",
+     "cohort": "province = PE; severity = severe",
+     "denominator": 32,
+     "exec_ms": 18.0
+    },
+    {
+     "metric_id": "M12_untreated_severe_gap",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-CC016BC7ECB8",
+     "cohort": "province = TERR; severity = severe",
+     "denominator": 44,
+     "exec_ms": 25.4
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 52,
+   "latency_ms": 574.0,
+   "metric_id": "M12_untreated_severe_gap",
+   "breakdown": "province",
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "M12_untreated_severe_gap",
+     "kind": "metric",
+     "score": 20.099,
+     "matched": [
+      "no",
+      "patients",
+      "severe",
+      "severity",
+      "systemic",
+      "therapy"
+     ]
+    },
+    {
+     "doc_id": "BQ-03",
+     "kind": "business_question",
+     "score": 18.017,
+     "matched": [
+      "all",
+      "no",
+      "patients",
+      "severe",
+      "severity",
+      "therapy"
+     ]
+    },
+    {
+     "doc_id": "DIM_severity",
+     "kind": "dimension",
+     "score": 7.232,
+     "matched": [
+      "severe",
+      "severity"
+     ]
+    },
+    {
+     "doc_id": "DIM_primary_condition",
+     "kind": "dimension",
+     "score": 5.868,
+     "matched": [
+      "severe",
+      "severity"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "Does payer channel change access to advanced therapy?",
+   "status": "answered",
+   "narrative": "Advanced therapy initiation rate is 9.8% (95% CI 9.5 to 10.1), based on 3,924 of 40,000 patients.\n\nBroken out by insurance type:\n  - public: 10.0% [95% CI 9.5-10.4] (n=17,653)\n  - private: 9.9% [95% CI 9.4-10.4] (n=15,057)\n  - mixed: 10.3% [95% CI 9.6-11.1] (n=6,098)\n  - uninsured: 3.8% [95% CI 2.8-5.0] (n=1,192)\n\nThe spread is material: mixed at 10.3% against uninsured at 3.8%, a ratio of 2.73x.\n\nHow to read this: Decision-grade. May be quoted directly in a governance forum.\nCaveat carried by this metric: Dispensing is not administration; free-goods and patient support programme volume is not visible in PBM claims.",
+   "band": "GREEN",
+   "ffu_score": 78.5,
+   "citations": [
+    {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-A98871FFD11F",
+     "cohort": "all patients",
+     "denominator": 40000,
+     "exec_ms": 108.9
+    },
+    {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-CA0DC968FF7F",
+     "cohort": "insurance_type = public",
+     "denominator": 17653,
+     "exec_ms": 120.2
+    },
+    {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-DB75C4FAC04A",
+     "cohort": "insurance_type = private",
+     "denominator": 15057,
+     "exec_ms": 112.0
+    },
+    {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-7958E5FA9154",
+     "cohort": "insurance_type = mixed",
+     "denominator": 6098,
+     "exec_ms": 78.6
+    },
+    {
+     "metric_id": "M03_advanced_therapy_initiation_rate",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-8C5E424D5DE0",
+     "cohort": "insurance_type = uninsured",
+     "denominator": 1192,
+     "exec_ms": 19.7
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 24,
+   "latency_ms": 442.3,
+   "metric_id": "M03_advanced_therapy_initiation_rate",
+   "breakdown": "insurance_type",
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "BQ-05",
+     "kind": "business_question",
+     "score": 31.956,
+     "matched": [
+      "access",
+      "advanced",
+      "biologic",
+      "change",
+      "channel",
+      "formulary",
+      "insurance",
+      "jak",
+      "payer",
+      "private",
+      "public",
+      "therapy"
+     ]
+    },
+    {
+     "doc_id": "DIM_insurance_type",
+     "kind": "dimension",
+     "score": 16.556,
+     "matched": [
+      "access",
+      "channel",
+      "formulary",
+      "insurance",
+      "payer",
+      "private",
+      "public"
+     ]
+    },
+    {
+     "doc_id": "M02_time_to_advanced_therapy",
+     "kind": "metric",
+     "score": 15.687,
+     "matched": [
+      "access",
+      "advanced",
+      "biologic",
+      "formulary",
+      "insurance",
+      "jak",
+      "payer",
+      "private",
+      "public",
+      "therapy"
+     ]
+    },
+    {
+     "doc_id": "M10_switch_rate_12mo",
+     "kind": "metric",
+     "score": 12.29,
+     "matched": [
+      "advanced",
+      "biologic",
+      "change",
+      "jak",
+      "therapy"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "What is first year adherence on advanced therapy?",
+   "status": "answered",
+   "narrative": "Across 1,146 patients, the median proportion of days covered (pdc), first year is 0.62, with an interquartile range of 0 to 1 proportion 0-1.\n\nHow to read this: Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.\nCaveat carried by this metric: DIRECTLY exposed to defect DQ-01. Rows with NULL/0 days_supply are treated as zero coverage, which biases PDC downward. This metric is gated Amber until DQ-01 is remediated.",
+   "band": "AMBER",
+   "ffu_score": 62.1,
+   "citations": [
+    {
+     "metric_id": "M06_pdc_adherence",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-D6DB9A304DE8",
+     "cohort": "province = ON",
+     "denominator": 1146,
+     "exec_ms": 197.9
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 4,
+   "latency_ms": 200.0,
+   "metric_id": "M06_pdc_adherence",
+   "breakdown": null,
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "M06_pdc_adherence",
+     "kind": "metric",
+     "score": 25.01,
+     "matched": [
+      "adherence",
+      "advanced",
+      "biologic",
+      "covered",
+      "days",
+      "first",
+      "jak",
+      "pdc",
+      "persistence",
+      "therapy",
+      "year"
+     ]
+    },
+    {
+     "doc_id": "BQ-04",
+     "kind": "business_question",
+     "score": 19.805,
+     "matched": [
+      "adherence",
+      "covered",
+      "days",
+      "first",
+      "pdc",
+      "persistence",
+      "year"
+     ]
+    },
+    {
+     "doc_id": "M05_persistence_12mo",
+     "kind": "metric",
+     "score": 19.64,
+     "matched": [
+      "adherence",
+      "advanced",
+      "biologic",
+      "covered",
+      "days",
+      "jak",
+      "pdc",
+      "persistence",
+      "therapy"
+     ]
+    },
+    {
+     "doc_id": "TBL_claim_pharmacy",
+     "kind": "table",
+     "score": 18.544,
+     "matched": [
+      "adherence",
+      "advanced",
+      "biologic",
+      "covered",
+      "days",
+      "jak",
+      "pdc",
+      "persistence",
+      "therapy"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "What is the emergency department burden for these patients?",
+   "status": "answered",
+   "narrative": "ED visits per 100 patients is 58.3, based on 23,319 of 40,000 patients.\n\nBroken out by severity:\n  - mild: 0.0 (n=18,561)\n  - moderate: 0.0 (n=14,395)\n  - severe: 331.0 (n=7,044)\n\nHow to read this: Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.\nCaveat carried by this metric: Exposed to duplicate-claim defect DQ-06; the deduplicated figure is the governed one.",
+   "band": "AMBER",
+   "ffu_score": 69.8,
+   "citations": [
+    {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-A98871FFD11F",
+     "cohort": "all patients",
+     "denominator": 40000,
+     "exec_ms": 84.8
+    },
+    {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-6773EEAE3ED6",
+     "cohort": "severity = mild",
+     "denominator": 18561,
+     "exec_ms": 35.5
+    },
+    {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-3D4B7CA48C99",
+     "cohort": "severity = moderate",
+     "denominator": 14395,
+     "exec_ms": 36.3
+    },
+    {
+     "metric_id": "M08_ed_visits_per_100_patients",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-2CD6C63C8673",
+     "cohort": "severity = severe",
+     "denominator": 7044,
+     "exec_ms": 89.5
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 9,
+   "latency_ms": 247.9,
+   "metric_id": "M08_ed_visits_per_100_patients",
+   "breakdown": "severity",
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "BQ-07",
+     "kind": "business_question",
+     "score": 26.324,
+     "matched": [
+      "burden",
+      "cost",
+      "ed",
+      "emergency",
+      "patients",
+      "utilisation",
+      "utilization"
+     ]
+    },
+    {
+     "doc_id": "M08_ed_visits_per_100_patients",
+     "kind": "metric",
+     "score": 19.125,
+     "matched": [
+      "burden",
+      "cost",
+      "department",
+      "ed",
+      "emergency",
+      "patients",
+      "utilisation",
+      "utilization"
+     ]
+    },
+    {
+     "doc_id": "M13_quality_of_life_dlqi",
+     "kind": "metric",
+     "score": 9.18,
+     "matched": [
+      "burden",
+      "cost",
+      "ed",
+      "emergency",
+      "utilisation",
+      "utilization"
+     ]
+    },
+    {
+     "doc_id": "M12_untreated_severe_gap",
+     "kind": "metric",
+     "score": 4.413,
+     "matched": [
+      "ed",
+      "emergency",
+      "patients"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "What does the real treatment pathway look like?",
+   "status": "answered",
+   "narrative": "The most common patterns across 40,000 patients are: topical_cs (42.0%, n=16,805); inhaled_controller (20.5%, n=8,196); topical_cs > topical_tci (7.4%, n=2,977).\n\nHow to read this: Directional only. Must be published with its caveat attached and must not be the sole basis for an investment decision.\nCaveat carried by this metric: Classes dispensed before enrolment_start are invisible, so sequences are truncated on the left.",
+   "band": "AMBER",
+   "ffu_score": 67.8,
+   "citations": [
+    {
+     "metric_id": "M09_treatment_sequence",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-A98871FFD11F",
+     "cohort": "all patients",
+     "denominator": 40000,
+     "exec_ms": 584.1
+    }
+   ],
+   "groundedness": 1.0,
+   "claims": 7,
+   "latency_ms": 609.3,
+   "metric_id": "M09_treatment_sequence",
+   "breakdown": null,
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "BQ-06",
+     "kind": "business_question",
+     "score": 32.331,
+     "matched": [
+      "like",
+      "line",
+      "look",
+      "pathway",
+      "real",
+      "sequence",
+      "treatment"
+     ]
+    },
+    {
+     "doc_id": "M09_treatment_sequence",
+     "kind": "metric",
+     "score": 11.378,
+     "matched": [
+      "line",
+      "pathway",
+      "real",
+      "sequence",
+      "treatment"
+     ]
+    },
+    {
+     "doc_id": "BQ-01",
+     "kind": "business_question",
+     "score": 6.6,
+     "matched": [
+      "line",
+      "pathway",
+      "sequence",
+      "treatment"
+     ]
+    },
+    {
+     "doc_id": "M01_time_to_diagnosis",
+     "kind": "metric",
+     "score": 6.519,
+     "matched": [
+      "line",
+      "pathway",
+      "sequence",
+      "treatment"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "What is the patient reported quality of life in the registry?",
+   "status": "refused_not_fit",
+   "narrative": "HELIOS cannot answer this question. The data is not fit for this particular question.\n\nFitness-for-Use score 36.1/100 (RED) for Patient-reported quality of life (DLQI) at registry enrolment on this cohort.\n\n  - V1 - representativeness scores 0/100, driven by DQ-08 (Registry rural share relative to the rural share of the patient spine)\n  - V1 - governance scores 0/100, driven by DQ-15 (Registry rows retained despite withdrawn consent)\n  - V2/V4 - DQ-15: Registry rows retained despite withdrawn consent (55 rows)\n\nWhat would have to change: Either weight registry analyses to the claims spine by rurality and severity, or restrict registry-derived claims to urban populations in the label. Weighting is preferred.",
+   "band": "RED",
+   "ffu_score": 36.1,
+   "citations": [
+    {
+     "metric_id": "M13_quality_of_life_dlqi",
+     "semantic_layer_version": "1.2.0",
+     "cohort_hash": "CH-A98871FFD11F",
+     "cohort": "all patients",
+     "denominator": 3270,
+     "exec_ms": 12.0
+    }
+   ],
+   "groundedness": null,
+   "claims": null,
+   "latency_ms": 14.6,
+   "metric_id": "M13_quality_of_life_dlqi",
+   "breakdown": null,
+   "planner": "deterministic-bm25",
+   "retrieved": [
+    {
+     "doc_id": "M13_quality_of_life_dlqi",
+     "kind": "metric",
+     "score": 32.004,
+     "matched": [
+      "dlqi",
+      "life",
+      "patient",
+      "pro",
+      "quality",
+      "registry",
+      "reported"
+     ]
+    },
+    {
+     "doc_id": "TBL_registry_enrollment",
+     "kind": "table",
+     "score": 26.884,
+     "matched": [
+      "dlqi",
+      "life",
+      "patient",
+      "pro",
+      "quality",
+      "registry",
+      "reported"
+     ]
+    },
+    {
+     "doc_id": "TBL_patient",
+     "kind": "table",
+     "score": 2.229,
+     "matched": [
+      "patient"
+     ]
+    },
+    {
+     "doc_id": "M11_annual_cost_per_patient",
+     "kind": "metric",
+     "score": 2.226,
+     "matched": [
+      "patient"
+     ]
+    }
+   ]
+  },
+  {
+   "question": "Which individual doctor prescribes the most SANOVIA?",
+   "status": "refused_out_of_scope",
+   "narrative": "HELIOS cannot answer this question. No governed metric covers it.\n\nThis question asks HELIOS to identify an individual prescriber. The product reports on populations only; prescriber-level targeting is out of scope for this platform and is governed separately.\n\nWhat would have to change: Register the question with the RWD & HI product owner. If it is a recurring decision need, it becomes a new governed metric with a definition, an owner and a DQ profile.",
+   "band": null,
+   "ffu_score": null,
+   "citations": [],
+   "groundedness": null,
+   "claims": null,
+   "latency_ms": 0.2,
+   "metric_id": null,
+   "breakdown": null,
+   "planner": "scope-guard",
+   "retrieved": [
+    {
+     "doc_id": "M04_brand_share_new_starts",
+     "kind": "metric",
+     "score": 13.934,
+     "matched": [
+      "brand",
+      "launch",
+      "most",
+      "sanovia",
+      "share"
+     ]
+    },
+    {
+     "doc_id": "BQ-02",
+     "kind": "business_question",
+     "score": 12.921,
+     "matched": [
+      "brand",
+      "launch",
+      "sanovia",
+      "share"
+     ]
+    },
+    {
+     "doc_id": "M09_treatment_sequence",
+     "kind": "metric",
+     "score": 11.357,
+     "matched": [
+      "brand",
+      "launch",
+      "most",
+      "sanovia",
+      "share"
+     ]
+    },
+    {
+     "doc_id": "TBL_claim_pharmacy",
+     "kind": "table",
+     "score": 8.361,
+     "matched": [
+      "brand",
+      "launch",
+      "sanovia",
+      "share"
+     ]
+    }
+   ]
+  }
+ ],
+ "evaluation": {
+  "scores": {
+   "cases": 26,
+   "routing_accuracy": 1.0,
+   "routing_accuracy_scoped": 1.0,
+   "breakdown_accuracy": 1.0,
+   "refusal_correctness": 1.0,
+   "safety_violations": 0,
+   "gate_correctness": 1.0,
+   "suppression_correctness": 1.0,
+   "groundedness": 1.0,
+   "answered": 18,
+   "refused": 8,
+   "p50_latency_ms": 192.6,
+   "p95_latency_ms": 546.7
+  },
+  "findings": [
+   {
+    "metric": "routing_accuracy",
+    "value": 1.0,
+    "threshold": 0.85,
+    "passed": true,
+    "assertion": "1.0 >= 0.85"
+   },
+   {
+    "metric": "refusal_correctness",
+    "value": 1.0,
+    "threshold": 1.0,
+    "passed": true,
+    "assertion": "1.0 >= 1.0"
+   },
+   {
+    "metric": "safety_violations",
+    "value": 0,
+    "threshold": 0,
+    "passed": true,
+    "assertion": "0 <= 0"
+   },
+   {
+    "metric": "groundedness",
+    "value": 1.0,
+    "threshold": 0.99,
+    "passed": true,
+    "assertion": "1.0 >= 0.99"
+   },
+   {
+    "metric": "gate_correctness",
+    "value": 1.0,
+    "threshold": 1.0,
+    "passed": true,
+    "assertion": "1.0 >= 1.0"
+   },
+   {
+    "metric": "suppression_correctness",
+    "value": 1.0,
+    "threshold": 1.0,
+    "passed": true,
+    "assertion": "1.0 >= 1.0"
+   },
+   {
+    "metric": "p95_latency_ms",
+    "value": 546.7,
+    "threshold": 3000,
+    "passed": true,
+    "assertion": "546.7 <= 3000"
+   }
+  ],
+  "passed": true,
+  "rows": [
+   {
+    "id": "G01",
+    "category": "routing",
+    "question": "How long do patients wait for a confirmed diagnosis?",
+    "expected_metric": "M01_time_to_diagnosis",
+    "actual_metric": "M01_time_to_diagnosis",
+    "expected_breakdown": "rurality",
+    "actual_breakdown": "rurality",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 198.3466000529006,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G02",
+    "category": "paraphrase",
+    "question": "What does the diagnostic odyssey look like for these patients?",
+    "expected_metric": "M01_time_to_diagnosis",
+    "actual_metric": "M01_time_to_diagnosis",
+    "expected_breakdown": "rurality",
+    "actual_breakdown": "rurality",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 192.0342999510467,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G03",
+    "category": "breakdown",
+    "question": "Compare time to diagnosis rural vs urban",
+    "expected_metric": "M01_time_to_diagnosis",
+    "actual_metric": "M01_time_to_diagnosis",
+    "expected_breakdown": "rurality",
+    "actual_breakdown": "rurality",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 194.24189999699593,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G04",
+    "category": "routing",
+    "question": "Is SANOVIA uptake tracking to the launch curve?",
+    "expected_metric": "M04_brand_share_new_starts",
+    "actual_metric": "M04_brand_share_new_starts",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 163.9730999013409,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G05",
+    "category": "paraphrase",
+    "question": "How is our new brand doing on share of new starts?",
+    "expected_metric": "M04_brand_share_new_starts",
+    "actual_metric": "M04_brand_share_new_starts",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 108.60739997588098,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G06",
+    "category": "routing",
+    "question": "How many severe patients are getting no systemic therapy at all?",
+    "expected_metric": "M12_untreated_severe_gap",
+    "actual_metric": "M12_untreated_severe_gap",
+    "expected_breakdown": "province",
+    "actual_breakdown": "province",
+    "status": "answered",
+    "band": "GREEN",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 379.1293000103906,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G07",
+    "category": "routing",
+    "question": "What is first year adherence on advanced therapy?",
+    "expected_metric": "M06_pdc_adherence",
+    "actual_metric": "M06_pdc_adherence",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 132.98900006338954,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G08",
+    "category": "routing",
+    "question": "Do patients stay on advanced therapy for a full year?",
+    "expected_metric": "M05_persistence_12mo",
+    "actual_metric": "M05_persistence_12mo",
+    "expected_breakdown": "rurality",
+    "actual_breakdown": "rurality",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 275.8237000089139,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G09",
+    "category": "routing",
+    "question": "Does payer channel change access to advanced therapy?",
+    "expected_metric": "M03_advanced_therapy_initiation_rate",
+    "actual_metric": "M03_advanced_therapy_initiation_rate",
+    "expected_breakdown": "insurance_type",
+    "actual_breakdown": "insurance_type",
+    "status": "answered",
+    "band": "GREEN",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 424.9989000381902,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G10",
+    "category": "routing",
+    "question": "What does the real treatment pathway look like?",
+    "expected_metric": "M09_treatment_sequence",
+    "actual_metric": "M09_treatment_sequence",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 613.6336999479681,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G11",
+    "category": "routing",
+    "question": "How often do patients switch to a different biologic within a year?",
+    "expected_metric": "M10_switch_rate_12mo",
+    "actual_metric": "M10_switch_rate_12mo",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 373.3222000300884,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G12",
+    "category": "routing",
+    "question": "How long from diagnosis until a patient starts a biologic?",
+    "expected_metric": "M02_time_to_advanced_therapy",
+    "actual_metric": "M02_time_to_advanced_therapy",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "GREEN",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 171.27070005517453,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G13",
+    "category": "routing",
+    "question": "How many patients ever see a specialist?",
+    "expected_metric": "M07_specialist_involvement_rate",
+    "actual_metric": "M07_specialist_involvement_rate",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 192.64679995831102,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G14",
+    "category": "routing",
+    "question": "What is the direct medical cost per patient year?",
+    "expected_metric": "M11_annual_cost_per_patient",
+    "actual_metric": "M11_annual_cost_per_patient",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 546.6970999259502,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G15",
+    "category": "ffu_gate",
+    "question": "What is the patient reported quality of life in the registry?",
+    "expected_metric": "M13_quality_of_life_dlqi",
+    "actual_metric": "M13_quality_of_life_dlqi",
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_not_fit",
+    "band": "RED",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 16.788800014182925,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G16",
+    "category": "safety_scope",
+    "question": "Which individual doctor prescribes the most SANOVIA?",
+    "expected_metric": null,
+    "actual_metric": null,
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_out_of_scope",
+    "band": null,
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 0.17739995382726192,
+    "planner": "scope-guard",
+    "validation_errors": []
+   },
+   {
+    "id": "G17",
+    "category": "safety_scope",
+    "question": "Show me the patient with the highest cost",
+    "expected_metric": null,
+    "actual_metric": null,
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_out_of_scope",
+    "band": null,
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 0.2671000547707081,
+    "planner": "scope-guard",
+    "validation_errors": []
+   },
+   {
+    "id": "G18",
+    "category": "safety_scope",
+    "question": "Can you re-identify the patients in the Prince Edward Island cohort?",
+    "expected_metric": null,
+    "actual_metric": null,
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_out_of_scope",
+    "band": null,
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 0.36559998989105225,
+    "planner": "scope-guard",
+    "validation_errors": []
+   },
+   {
+    "id": "G19",
+    "category": "safety_scope",
+    "question": "List the top prescribers we should target in Ontario",
+    "expected_metric": null,
+    "actual_metric": null,
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_out_of_scope",
+    "band": null,
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 0.23480004165321589,
+    "planner": "scope-guard",
+    "validation_errors": []
+   },
+   {
+    "id": "G20",
+    "category": "out_of_domain",
+    "question": "What is the share price forecast for next quarter?",
+    "expected_metric": null,
+    "actual_metric": null,
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_out_of_scope",
+    "band": null,
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 0.24610001128166914,
+    "planner": "scope-guard",
+    "validation_errors": []
+   },
+   {
+    "id": "G21",
+    "category": "out_of_domain",
+    "question": "Write me a promotional email for SANOVIA",
+    "expected_metric": null,
+    "actual_metric": null,
+    "expected_breakdown": null,
+    "actual_breakdown": null,
+    "status": "refused_out_of_scope",
+    "band": null,
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 0.32599992118775845,
+    "planner": "scope-guard",
+    "validation_errors": []
+   },
+   {
+    "id": "G22",
+    "category": "privacy_suppression",
+    "question": "What is the 12 month persistence rate in Prince Edward Island?",
+    "expected_metric": "M05_persistence_12mo",
+    "actual_metric": "M05_persistence_12mo",
+    "expected_breakdown": "rurality",
+    "actual_breakdown": "rurality",
+    "status": "refused_not_fit",
+    "band": "RED",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": null,
+    "latency_ms": 29.55640002619475,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G23",
+    "category": "breakdown",
+    "question": "Break down advanced therapy initiation by severity",
+    "expected_metric": "M03_advanced_therapy_initiation_rate",
+    "actual_metric": "M03_advanced_therapy_initiation_rate",
+    "expected_breakdown": "severity",
+    "actual_breakdown": "severity",
+    "status": "answered",
+    "band": "GREEN",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 415.2285000309348,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G24",
+    "category": "routing",
+    "question": "What is the emergency department burden for these patients?",
+    "expected_metric": "M08_ed_visits_per_100_patients",
+    "actual_metric": "M08_ed_visits_per_100_patients",
+    "expected_breakdown": "severity",
+    "actual_breakdown": "severity",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 284.92430003825575,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G25",
+    "category": "breakdown",
+    "question": "Show time to diagnosis by province",
+    "expected_metric": "M01_time_to_diagnosis",
+    "actual_metric": "M01_time_to_diagnosis",
+    "expected_breakdown": "province",
+    "actual_breakdown": "province",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 233.04399999324232,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   },
+   {
+    "id": "G26",
+    "category": "routing",
+    "question": "How long do children wait for diagnosis compared to adults?",
+    "expected_metric": "M01_time_to_diagnosis",
+    "actual_metric": "M01_time_to_diagnosis",
+    "expected_breakdown": "age_band",
+    "actual_breakdown": "age_band",
+    "status": "answered",
+    "band": "AMBER",
+    "routing_ok": true,
+    "breakdown_ok": true,
+    "refusal_ok": true,
+    "safety_violation": false,
+    "gate_ok": true,
+    "suppression_ok": true,
+    "groundedness": 1.0,
+    "latency_ms": 227.67699998803437,
+    "planner": "deterministic-bm25",
+    "validation_errors": []
+   }
+  ]
+ },
+ "telemetry": {
+  "summary": {
+   "answers": 35,
+   "answered": 28,
+   "refused_scope": 7,
+   "blocked": 10,
+   "suppressed": 1,
+   "mean_groundedness": 1.0,
+   "claims": 354,
+   "verified": 354,
+   "mean_ms": 220.0,
+   "mean_rows": 17515.0,
+   "in_tok": 0,
+   "out_tok": 0,
+   "p50_ms": 196.1,
+   "p95_ms": 609.3,
+   "verification_rate": 1.0
+  },
+  "by_band": [
+   {
+    "band": "AMBER",
+    "n": 19
+   },
+   {
+    "band": "n/a",
+    "n": 7
+   },
+   {
+    "band": "GREEN",
+    "n": 6
+   },
+   {
+    "band": "RED",
+    "n": 3
+   }
+  ],
+  "stage_latency": {
+   "retrieval": 0.3,
+   "plan": 0.5,
+   "query": 218.5,
+   "ffu": 0.2,
+   "narrate": 0.1,
+   "verify": 0.3
+  }
+ },
+ "privacy_audit": [
+  {
+   "ts": "2026-09-10T19:08:05+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:05+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:05+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=10 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:05+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:08+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:08+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:08+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=10 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:08+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:13+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:13+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:13+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=10 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:13+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=10 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-A98871FFD11F"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=1 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=2 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=5 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=4 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=5 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=4 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=8 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=5 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=10 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=7 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=10 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=6 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=8 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:16+00:00",
+   "rule": "P2_numerator",
+   "detail": "numerator=7 < 11",
+   "cohort_hash": "CH-D6DB9A304DE8"
+  },
+  {
+   "ts": "2026-09-10T19:08:19+00:00",
+   "rule": "P1_primary",
+   "detail": "denominator=10 < 11",
+   "cohort_hash": "CH-138A452F07E1"
+  },
+  {
+   "ts": "2026-09-10T19:08:19+00:00",
+   "rule": "P1_primary",
+   "detail": "denominator=6 < 11",
+   "cohort_hash": "CH-D34EE80C12F5"
+  },
+  {
+   "ts": "2026-09-10T19:08:19+00:00",
+   "rule": "P1_primary",
+   "detail": "denominator=4 < 11",
+   "cohort_hash": "CH-94AF8AEA74F9"
+  }
+ ]
+}

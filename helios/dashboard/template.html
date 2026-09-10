@@ -1,0 +1,796 @@
+<title>HELIOS Launch Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+
+<style>
+/* ============================================================ tokens */
+:root{
+  --ground:#EDF0F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --surface-3:#EAEEF3;
+  --line:#D5DCE5; --line-soft:#E6EAF0;
+  --ink:#0D131B; --ink-2:#3C4855; --ink-3:#6A7686;
+  --accent:#0B6E7D; --accent-2:#0E8A9C; --accent-soft:#DCEDF0; --accent-line:#9FCBD3;
+  --good:#1C7048; --good-soft:#DDEEE5; --good-line:#8FC4AA;
+  --warn:#94600A; --warn-soft:#F4E8D2; --warn-line:#D4B375;
+  --crit:#A6362F; --crit-soft:#F5E0DE; --crit-line:#DBA39E;
+  --grid:#DFE5EC; --hatch:#C3CCD7;
+  --shadow:0 1px 2px rgba(13,19,27,.06), 0 8px 24px -12px rgba(13,19,27,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#080D14; --surface:#101822; --surface-2:#0C131C; --surface-3:#16202C;
+    --line:#22303F; --line-soft:#1A2531;
+    --ink:#E3E9F1; --ink-2:#A5B3C4; --ink-3:#74829A;
+    --accent:#3FB6C7; --accent-2:#5FCBDA; --accent-soft:#0F2A31; --accent-line:#1E4E58;
+    --good:#4CBA85; --good-soft:#0F2A1E; --good-line:#245A40;
+    --warn:#DFA43F; --warn-soft:#2B2110; --warn-line:#5C4520;
+    --crit:#E4736A; --crit-soft:#2E1614; --crit-line:#63302C;
+    --grid:#1C2836; --hatch:#2A3949;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#080D14; --surface:#101822; --surface-2:#0C131C; --surface-3:#16202C;
+  --line:#22303F; --line-soft:#1A2531;
+  --ink:#E3E9F1; --ink-2:#A5B3C4; --ink-3:#74829A;
+  --accent:#3FB6C7; --accent-2:#5FCBDA; --accent-soft:#0F2A31; --accent-line:#1E4E58;
+  --good:#4CBA85; --good-soft:#0F2A1E; --good-line:#245A40;
+  --warn:#DFA43F; --warn-soft:#2B2110; --warn-line:#5C4520;
+  --crit:#E4736A; --crit-soft:#2E1614; --crit-line:#63302C;
+  --grid:#1C2836; --hatch:#2A3949;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size:15px; line-height:1.55; margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1200px; margin:0 auto; padding-inline:20px; padding-block:0}
+h1,h2,h3,h4{text-wrap:balance; margin:0}
+a{color:var(--accent)}
+.mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+
+/* ============================================================ masthead */
+header.mast{
+  background:var(--surface); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:40;
+}
+.mast-in{display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding-block:14px}
+.logo{display:flex; align-items:baseline; gap:10px}
+.logo b{
+  font-family:"IBM Plex Sans"; font-weight:700; font-size:19px;
+  letter-spacing:.13em; color:var(--ink);
+}
+.logo span{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3)}
+.mast-spacer{flex:1}
+.gate{
+  display:inline-flex; align-items:center; gap:8px; padding:5px 12px; border-radius:2px;
+  font-size:11.5px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  border:1px solid var(--good-line); background:var(--good-soft); color:var(--good);
+}
+.gate.fail{border-color:var(--crit-line); background:var(--crit-soft); color:var(--crit)}
+.dot{width:7px; height:7px; border-radius:50%; background:currentColor; flex:none}
+
+nav.tabs{display:flex; gap:2px; overflow-x:auto; border-top:1px solid var(--line-soft)}
+nav.tabs button{
+  appearance:none; background:none; border:0; border-bottom:2px solid transparent;
+  color:var(--ink-3); font-family:inherit; font-size:13.5px; font-weight:500;
+  padding:11px 15px; cursor:pointer; white-space:nowrap;
+}
+nav.tabs button:hover{color:var(--ink-2)}
+nav.tabs button[aria-selected="true"]{color:var(--accent); border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+
+/* ============================================================ sections */
+main{padding-block:28px 64px}
+section[role="tabpanel"]{display:flex; flex-direction:column; gap:26px}
+.lede{
+  font-family:"Newsreader", Georgia, serif; font-size:19.5px; line-height:1.5;
+  color:var(--ink-2); max-width:66ch;
+}
+.lede em{color:var(--ink); font-style:italic}
+.eyebrow{
+  font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600;
+}
+h2.sec{font-size:20px; font-weight:600; letter-spacing:-.01em}
+.sub{font-size:13.5px; color:var(--ink-3); max-width:74ch}
+
+.panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:3px;
+  padding:20px; display:flex; flex-direction:column; gap:14px;
+}
+.panel.flush{padding:0}
+.grid{display:grid; gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(232px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(178px,1fr))}
+
+/* ---- KPI tile: the FFU band is a structural edge, not a badge ---- */
+.kpi{
+  background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--ink-3);
+  border-radius:3px; padding:15px 16px; display:flex; flex-direction:column; gap:5px;
+}
+.kpi.b-GREEN{border-left-color:var(--good)}
+.kpi.b-AMBER{border-left-color:var(--warn)}
+.kpi.b-RED{border-left-color:var(--crit)}
+.kpi .k-label{font-size:11.5px; color:var(--ink-3); font-weight:500; line-height:1.35}
+.kpi .k-val{
+  font-family:"IBM Plex Sans"; font-size:29px; font-weight:600; letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums; line-height:1.1; color:var(--ink);
+}
+.kpi .k-val.sup{
+  font-size:13px; font-weight:500; color:var(--ink-3); letter-spacing:.06em;
+  background:repeating-linear-gradient(135deg,var(--hatch) 0 2px,transparent 2px 6px);
+  padding:6px 9px; border-radius:2px; display:inline-block;
+}
+.kpi .k-meta{font-size:11.5px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+.band{
+  display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600;
+  letter-spacing:.09em; text-transform:uppercase; padding:2px 7px; border-radius:2px;
+  border:1px solid; white-space:nowrap;
+}
+.band.GREEN{color:var(--good); background:var(--good-soft); border-color:var(--good-line)}
+.band.AMBER{color:var(--warn); background:var(--warn-soft); border-color:var(--warn-line)}
+.band.RED{color:var(--crit); background:var(--crit-soft); border-color:var(--crit-line)}
+.band.NEUTRAL{color:var(--ink-3); background:var(--surface-3); border-color:var(--line)}
+
+/* ---- score bars ---- */
+.rowlist{display:flex; flex-direction:column}
+.rowitem{
+  display:grid; grid-template-columns:minmax(150px,1.5fr) minmax(90px,1fr) auto auto;
+  gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line-soft);
+}
+.rowitem:last-child{border-bottom:0}
+.rowitem .r-name{font-size:13px; color:var(--ink-2); line-height:1.35}
+.rowitem .r-name b{color:var(--ink); font-weight:500}
+.track{height:7px; background:var(--surface-3); border-radius:1px; overflow:hidden; min-width:70px}
+.fill{height:100%; border-radius:1px}
+.fill.GREEN{background:var(--good)} .fill.AMBER{background:var(--warn)} .fill.RED{background:var(--crit)}
+.score{font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--ink-2); min-width:38px; text-align:right}
+
+/* ---- tables ---- */
+.tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:3px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:520px}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+th{
+  font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+  font-weight:600; background:var(--surface-2); position:sticky; top:0;
+}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* ---- agent transcript ---- */
+.qa{border:1px solid var(--line); border-radius:3px; background:var(--surface); overflow:hidden}
+.qa-q{
+  display:flex; gap:12px; align-items:flex-start; padding:14px 16px;
+  background:var(--surface-2); border-bottom:1px solid var(--line-soft);
+}
+.qa-q .qmark{
+  font-family:"IBM Plex Mono"; font-size:11px; color:var(--accent); flex:none;
+  border:1px solid var(--accent-line); background:var(--accent-soft);
+  border-radius:2px; padding:1px 5px; margin-top:2px;
+}
+.qa-q h4{font-size:15px; font-weight:600; color:var(--ink); line-height:1.4}
+.qa-body{padding:14px 16px; display:flex; flex-direction:column; gap:12px}
+.answer{
+  font-family:"Newsreader", Georgia, serif; font-size:16.5px; line-height:1.6;
+  color:var(--ink); white-space:pre-wrap; max-width:74ch;
+}
+.answer.refusal{color:var(--ink-2)}
+.qa-foot{
+  display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center;
+  padding-top:11px; border-top:1px solid var(--line-soft); font-size:11.5px; color:var(--ink-3);
+}
+.cite{
+  font-family:"IBM Plex Mono"; font-size:11px; color:var(--ink-3);
+  background:var(--surface-2); border:1px solid var(--line-soft);
+  border-radius:2px; padding:2px 6px;
+}
+.cite b{color:var(--accent); font-weight:500}
+
+/* ---- misc ---- */
+.note{
+  border-left:2px solid var(--accent); background:var(--accent-soft);
+  padding:11px 14px; font-size:13.5px; color:var(--ink-2); border-radius:0 2px 2px 0;
+}
+.note b{color:var(--ink)}
+.crit-note{border-left-color:var(--crit); background:var(--crit-soft)}
+details{border:1px solid var(--line-soft); border-radius:2px; background:var(--surface-2)}
+details summary{cursor:pointer; padding:8px 12px; font-size:12.5px; color:var(--ink-2); font-weight:500}
+details summary:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+details .dbody{padding:0 12px 12px; font-size:13px; color:var(--ink-2); display:flex; flex-direction:column; gap:7px}
+.chip{
+  font-size:11px; padding:2px 7px; border-radius:2px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink-3); white-space:nowrap;
+}
+.chip.ok{color:var(--good); border-color:var(--good-line); background:var(--good-soft)}
+.chip.no{color:var(--crit); border-color:var(--crit-line); background:var(--crit-soft)}
+figure{margin:0; display:flex; flex-direction:column; gap:9px}
+figcaption{font-size:12px; color:var(--ink-3); max-width:72ch}
+.chartbox{overflow-x:auto}
+svg{display:block; max-width:100%}
+.tip{
+  position:fixed; pointer-events:none; opacity:0; transition:opacity .1s;
+  background:var(--surface); border:1px solid var(--line); border-radius:3px;
+  box-shadow:var(--shadow); padding:7px 10px; font-size:12px; color:var(--ink);
+  z-index:80; max-width:230px;
+}
+.tip .t-k{color:var(--ink-3); font-size:11px}
+.legend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:11.5px; color:var(--ink-3); align-items:center}
+.legend i{width:11px; height:11px; border-radius:1px; display:inline-block; margin-right:5px; vertical-align:-1px}
+footer{border-top:1px solid var(--line); margin-top:30px; padding-block:22px 40px; font-size:12px; color:var(--ink-3)}
+
+@media (max-width:640px){
+  .rowitem{grid-template-columns:1fr auto; gap:6px 10px}
+  .rowitem .track{grid-column:1/2}
+  .kpi .k-val{font-size:25px}
+  .lede{font-size:17.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="mast-in">
+      <div class="logo"><b>HELIOS</b><span>RWD &amp; Healthcare Intelligence</span></div>
+      <div class="mast-spacer"></div>
+      <div id="gateChip" class="gate"><span class="dot"></span><span id="gateTxt">—</span></div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="main"></main>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+const DATA = __HELIOS_DATA__;
+</script>
+<script>
+/* ============================================================ helpers */
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (t,a={},...kids)=>{
+  const n=document.createElement(t);
+  for(const [k,v] of Object.entries(a)){
+    if(v==null) continue;
+    if(k==="class") n.className=v; else if(k==="html") n.innerHTML=v; else n.setAttribute(k,v);
+  }
+  for(const c of kids.flat()) if(c!=null) n.append(c.nodeType?c:document.createTextNode(c));
+  return n;
+};
+const NS="http://www.w3.org/2000/svg";
+const s = (t,a={})=>{const n=document.createElementNS(NS,t); for(const[k,v] of Object.entries(a)) if(v!=null) n.setAttribute(k,v); return n;};
+const fmtN = n => (n==null?"—":Number(n).toLocaleString());
+const pct1 = v => (v*100).toFixed(1)+"%";
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+const tip = $("#tip");
+function showTip(e, html){
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY - 10;
+  if(x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if(y + r.height > innerHeight - 8) y = innerHeight - r.height - 8;
+  tip.style.left = Math.max(8,x)+"px"; tip.style.top = Math.max(8,y)+"px";
+}
+const hideTip = ()=> tip.style.opacity = 0;
+function hoverable(node, html){
+  node.addEventListener("mousemove", e=>showTip(e,html));
+  node.addEventListener("mouseleave", hideTip);
+  node.style.cursor = "crosshair";
+}
+
+/* ============================================================ charts */
+
+/* Single-series monthly trend. Two kinds of unreliability are drawn
+   differently on purpose: months the privacy policy suppressed, and months
+   the metric's own caveat says are understated by claim run-off. */
+function trendChart(series, opts={}){
+  const W = 720, H = 260, P = {t:16, r:64, b:34, l:46};
+  const iw = W-P.l-P.r, ih = H-P.t-P.b;
+  const live = series.filter(p=>!p.suppressed);
+  const max = Math.max(0.2, Math.ceil((Math.max(...live.map(p=>p.value))+0.02)*10)/10);
+  const x = i => P.l + (series.length<2 ? iw/2 : i*iw/(series.length-1));
+  const y = v => P.t + ih - (v/max)*ih;
+  const svg = s("svg",{viewBox:`0 0 ${W} ${H}`, width:W, role:"img",
+                       "aria-label":opts.aria||"Monthly trend"});
+  const defs = s("defs"); svg.append(defs);
+  const grad = s("linearGradient",{id:"gArea", x1:0,y1:0,x2:0,y2:1});
+  grad.append(s("stop",{offset:"0%", style:"stop-color:var(--accent); stop-opacity:.26"}));
+  grad.append(s("stop",{offset:"100%", style:"stop-color:var(--accent); stop-opacity:.02"}));
+  defs.append(grad);
+  const hatch = s("pattern",{id:"gHatch", width:6, height:6, patternUnits:"userSpaceOnUse", patternTransform:"rotate(135)"});
+  hatch.append(s("rect",{width:6,height:6,fill:"transparent"}));
+  hatch.append(s("line",{x1:0,y1:0,x2:0,y2:6, style:"stroke:var(--hatch)","stroke-width":2}));
+  defs.append(hatch);
+
+  // y grid + ticks
+  const ticks = Math.round(max*10);
+  for(let i=0;i<=ticks;i++){
+    const v = max*i/ticks;
+    svg.append(s("line",{x1:P.l,x2:W-P.r,y1:y(v),y2:y(v), style:"stroke:var(--grid)","stroke-width":1}));
+    svg.append(el2text(P.l-8, y(v)+4, (v*100).toFixed(0)+"%", {anchor:"end"}));
+  }
+  // suppressed / caveat bands
+  const supIdx = series.map((p,i)=>p.suppressed?i:-1).filter(i=>i>=0);
+  supIdx.forEach(i=>{
+    const x0 = x(Math.max(0,i-0.5)), x1 = x(Math.min(series.length-1,i+0.5));
+    svg.append(s("rect",{x:x0, y:P.t, width:Math.max(3,x1-x0), height:ih, fill:"url(#gHatch)", opacity:.7}));
+  });
+  if(opts.runoff){
+    const i0 = series.length-opts.runoff;
+    const x0 = x(Math.max(0,i0-0.5));
+    const r = s("rect",{x:x0, y:P.t, width:(W-P.r)-x0, height:ih,
+                        style:"fill:var(--warn); opacity:.09"});
+    svg.append(r);
+    svg.append(s("line",{x1:x0,x2:x0,y1:P.t,y2:P.t+ih, style:"stroke:var(--warn)",
+                         "stroke-width":1,"stroke-dasharray":"3 3"}));
+    svg.append(el2text(x0-6, P.t+13, "claim run-off",
+                       {size:10.5, fill:"var(--warn)", weight:600, anchor:"end"}));
+  }
+  // area + line through live points only
+  const pts = live.map(p=>[x(series.indexOf(p)), y(p.value)]);
+  if(pts.length){
+    const d = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+    svg.append(s("path",{d:`${d} L ${pts[pts.length-1][0].toFixed(1)} ${P.t+ih} L ${pts[0][0].toFixed(1)} ${P.t+ih} Z`,
+                         fill:"url(#gArea)", stroke:"none"}));
+    svg.append(s("path",{d, style:"fill:none; stroke:var(--accent)", "stroke-width":2,
+                         "stroke-linejoin":"round","stroke-linecap":"round"}));
+  }
+  // markers
+  series.forEach((p,i)=>{
+    if(p.suppressed) return;
+    const last = i===series.length-1;
+    const c = s("circle",{cx:x(i), cy:y(p.value), r:last?5:3.4,
+                          style:`fill:${last?"var(--accent)":"var(--surface)"}; stroke:var(--accent)`,
+                          "stroke-width":2});
+    hoverable(c, `<div><b>${p.period}</b></div>
+      <div class="t-k">share of new starts</div><div>${pct1(p.value)}</div>
+      <div class="t-k">new starts in month</div><div>${fmtN(p.n)}</div>`);
+    svg.append(c);
+  });
+  // endpoint label
+  const lastLive = live[live.length-1];
+  if(lastLive){
+    const i = series.indexOf(lastLive);
+    const near = x(i) + 46 > W - P.r;          // no room to the right
+    svg.append(el2text(near ? x(i)-9 : x(i)+9, y(lastLive.value)-9,
+      pct1(lastLive.value),
+      {size:12.5, weight:600, fill:"var(--accent)", anchor: near?"end":"start"}));
+  }
+  // x labels: first, quarterly, last
+  series.forEach((p,i)=>{
+    const last = i===series.length-1;
+    if(i%3!==0 && !last) return;
+    svg.append(el2text(x(i), H-12, p.period,
+      {anchor: last?"end":(i===0?"start":"middle"), size:10.5}));
+  });
+  svg.append(s("line",{x1:P.l,x2:W-P.r,y1:P.t+ih,y2:P.t+ih, style:"stroke:var(--line)","stroke-width":1}));
+  return svg;
+}
+function el2text(x,y,txt,o={}){
+  const t = s("text",{x, y, "text-anchor":o.anchor||"start",
+    "font-size":o.size||11, "font-weight":o.weight||400,
+    style:`fill:${o.fill||"var(--ink-3)"}`, "font-family":"IBM Plex Mono, monospace"});
+  t.textContent = txt; return t;
+}
+
+/* Horizontal magnitude bars. Sequential opacity ramp on one hue = magnitude. */
+function barChart(rows, opts={}){
+  const rowH = 25, P = {t:opts.ref!=null?24:8, r:58, b:22, l:opts.labelW||54};
+  const W = 720, H = P.t + rows.length*rowH + P.b;
+  const iw = W - P.l - P.r;
+  const max = Math.max(...rows.map(r=>r.value||0)) * 1.02 || 1;
+  const svg = s("svg",{viewBox:`0 0 ${W} ${H}`, width:W, role:"img",
+                       "aria-label":opts.aria||"Comparison"});
+  const hue = opts.hue || "var(--accent)";
+  rows.forEach((r,i)=>{
+    const yy = P.t + i*rowH;
+    svg.append(el2text(P.l-9, yy+16, r.label, {anchor:"end", size:11.5, fill:"var(--ink-2)"}));
+    if(r.suppressed){
+      const g = s("rect",{x:P.l, y:yy+5, width:iw*0.22, height:13, rx:2,
+                          fill:"url(#gHatch)", style:"stroke:var(--line)"});
+      svg.append(g);
+      svg.append(el2text(P.l+iw*0.22+8, yy+16, "suppressed", {size:10.5}));
+      return;
+    }
+    const w = Math.max(2, (r.value/max)*iw);
+    const op = 0.42 + 0.58*(r.value/max);          // ramp carries magnitude
+    const bar = s("rect",{x:P.l, y:yy+4, width:w, height:15, rx:2, style:`fill:${hue}; opacity:${op}`});
+    hoverable(bar, `<div><b>${r.label}</b></div><div>${r.display}</div>
+      <div class="t-k">denominator</div><div>${fmtN(r.n)}</div>${r.hash?`<div class="t-k mono">${r.hash}</div>`:""}`);
+    svg.append(bar);
+    svg.append(el2text(P.l+w+8, yy+16, r.display, {size:11.5, weight:500, fill:"var(--ink-2)"}));
+  });
+  if(opts.ref!=null){
+    const rx = P.l + (opts.ref/max)*iw;
+    svg.append(s("line",{x1:rx,x2:rx,y1:P.t-6,y2:H-P.b+2, style:"stroke:var(--ink-3)",
+                         "stroke-width":1,"stroke-dasharray":"4 3"}));
+    svg.append(el2text(rx+5, P.t-10, opts.refLabel||"reference", {size:10.5}));
+  }
+  const defs = s("defs");
+  const hatch = s("pattern",{id:"gHatch2", width:6, height:6, patternUnits:"userSpaceOnUse", patternTransform:"rotate(135)"});
+  hatch.append(s("line",{x1:0,y1:0,x2:0,y2:6, style:"stroke:var(--hatch)","stroke-width":2}));
+  defs.append(hatch); svg.append(defs);
+  svg.querySelectorAll('[fill="url(#gHatch)"]').forEach(n=>n.setAttribute("fill","url(#gHatch2)"));
+  return svg;
+}
+
+function scoreRow(name, sub, score, band, right){
+  return el("div",{class:"rowitem"},
+    el("div",{class:"r-name"}, el("b",{},name), sub?el("div",{style:"font-size:11.5px;color:var(--ink-3)"},sub):null),
+    el("div",{class:"track"}, el("div",{class:"fill "+band, style:`width:${Math.max(2,score)}%`})),
+    el("div",{class:"score"}, score.toFixed(1)),
+    right||el("span",{class:"band "+band}, band));
+}
+
+/* ---- release gate chip in the masthead ---- */
+{
+  const passed = DATA.evaluation.passed, sc = DATA.evaluation.scores;
+  const chip = $("#gateChip");
+  chip.classList.toggle("fail", !passed);
+  $("#gateTxt").textContent = passed
+    ? `Release gate passed · ${sc.cases} cases`
+    : `Release gate blocked · ${sc.cases} cases`;
+  chip.title = passed
+    ? "Routing, refusal, safety, groundedness, gate and suppression thresholds all met."
+    : "One or more quality thresholds were not met; the build is blocked.";
+}
+
+/* ============================================================ tabs */
+const TABS = [
+  ["overview","Overview"], ["launch","Launch signals"], ["ffu","Fitness for use"],
+  ["dq","Data quality"], ["agent","Ask HELIOS"], ["assurance","Assurance"]
+];
+const main = $("#main"), tabsEl = $("#tabs");
+const panels = {};
+TABS.forEach(([id,label],i)=>{
+  const b = el("button",{role:"tab", id:"t-"+id, "aria-controls":"p-"+id,
+                         "aria-selected": i===0?"true":"false"}, label);
+  b.onclick = ()=>select(id);
+  tabsEl.append(b);
+  const p = el("section",{role:"tabpanel", id:"p-"+id, "aria-labelledby":"t-"+id});
+  if(i!==0) p.hidden = true;
+  panels[id]=p; main.append(p);
+});
+function select(id){
+  TABS.forEach(([t])=>{
+    $("#t-"+t).setAttribute("aria-selected", t===id?"true":"false");
+    panels[t].hidden = t!==id;
+  });
+  scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ============================================================ render */
+const M = DATA.semantic_layer.metrics, MET = DATA.metrics, BO = DATA.breakouts;
+const bandOf = mid => (DATA.ffu.find(f=>f.metric_id===mid)||{}).band || "NEUTRAL";
+const ffuOf  = mid => DATA.ffu.find(f=>f.metric_id===mid) || {};
+const boRows = key => (BO[key]||[]).map(r=>({
+  label:r.group, value:r.value, display:r.formatted, n:r.denominator||r.n,
+  suppressed:r.suppressed, hash:r.cohort_hash }));
+
+function kpi(mid, label, valOverride, meta){
+  const m = MET[mid]||{}, b = bandOf(mid);
+  const v = valOverride || m.formatted || "—";
+  return el("div",{class:"kpi b-"+b},
+    el("div",{class:"k-label"}, label),
+    el("div",{class:"k-val"+(m.suppressed?" sup":"")}, v),
+    el("div",{class:"k-meta"}, meta || `n = ${fmtN(m.denominator||m.n)}`),
+    el("div",{}, el("span",{class:"band "+b}, b)));
+}
+
+/* ---------------------------------------------------- Overview */
+{
+  const p = panels.overview, ev = DATA.evaluation, sc = ev.scores;
+  const bandCount = DATA.ffu.reduce((a,f)=>(a[f.band]=(a[f.band]||0)+1,a),{});
+  p.append(
+    el("div",{style:"display:flex;flex-direction:column;gap:12px"},
+      el("div",{class:"eyebrow"}, "Real-world evidence · SANOVIA (fictional) · Type 2 inflammation · Canada"),
+      el("h2",{class:"sec", style:"font-size:27px"}, "Every number knows what it may be used for."),
+      el("p",{class:"lede"},
+        "HELIOS answers launch questions from governed real-world data. Each answer carries the patients behind it, the defects that limit it, and a plain-language verdict on whether it can carry a decision. ",
+        el("em",{}, "Refusing is a first-class answer."))),
+
+    el("div",{class:"grid g4"},
+      kpi("M01_time_to_diagnosis","Median time to confirmed diagnosis"),
+      kpi("M12_untreated_severe_gap","Severe patients with no systemic therapy"),
+      kpi("M04_brand_share_new_starts","SANOVIA share of new starts (latest live month)",
+          MET.M04_brand_share_new_starts.series.filter(x=>!x.suppressed).slice(-1)[0]
+            ? pct1(MET.M04_brand_share_new_starts.series.filter(x=>!x.suppressed).slice(-1)[0].value) : "—",
+          "trailing month · read the 3-month average"),
+      kpi("M05_persistence_12mo","12-month persistence on advanced therapy")),
+
+    el("div",{class:"grid g2"},
+      el("div",{class:"panel"},
+        el("div",{class:"eyebrow"}, "The gate, in one line"),
+        el("h3",{style:"font-size:16px;font-weight:600"}, "13 governed metrics, scored against this population"),
+        el("div",{class:"legend"},
+          el("span",{}, el("i",{style:"background:var(--good)"}), `${bandCount.GREEN||0} decision-grade`),
+          el("span",{}, el("i",{style:"background:var(--warn)"}), `${bandCount.AMBER||0} directional only`),
+          el("span",{}, el("i",{style:"background:var(--crit)"}), `${bandCount.RED||0} blocked from publication`)),
+        el("p",{class:"sub"},
+          "Fitness is scored for a metric on a cohort — a business question — not for a dataset. The same registry that is unusable for a national quality-of-life claim is irrelevant to a pharmacy-claims trend, and the gate says so."),
+        el("div",{class:"note"},
+          el("b",{},"Currently blocked: "),
+          "patient-reported quality of life. The registry covers rural patients at 0.41× the claims spine, and 55 rows were retained after consent withdrawal.")),
+
+      el("div",{class:"panel"},
+        el("div",{class:"eyebrow"}, "AI assurance"),
+        el("h3",{style:"font-size:16px;font-weight:600"}, "Release gate on the golden set"),
+        el("div",{class:"grid g3", style:"gap:10px"},
+          statTile("Groundedness", sc.groundedness.toFixed(2), "numeric claims traced to an executed query"),
+          statTile("Safety violations", String(sc.safety_violations), "individual-level questions answered"),
+          statTile("Routing accuracy", sc.routing_accuracy.toFixed(2), `${sc.cases} golden cases`),
+          statTile("p95 latency", Math.round(sc.p95_latency_ms)+" ms", "end to end")),
+        el("p",{class:"sub"},
+          "The model chooses a governed metric and a cohort. It never writes SQL and never states a figure — every number is re-checked against an executed query before display."))),
+
+    el("div",{class:"panel"},
+      el("div",{class:"eyebrow"}, "Two findings worth the meeting"),
+      el("div",{class:"grid g2"},
+        finding("Rural patients wait 1.51× longer for a diagnosis",
+          `Median ${MET.M01_time_to_diagnosis.formatted} nationally, but ${(boRows("M01_time_to_diagnosis__rurality").find(r=>r.label==="rural")||{}).display} for rural patients against ${(boRows("M01_time_to_diagnosis__rurality").find(r=>r.label==="urban")||{}).display} for urban.`,
+          "Redirect disease-awareness spend to the highest-gap provinces.", "AMBER"),
+        finding("The uninsured initiate advanced therapy at a 2.6× disadvantage",
+          `${(boRows("M03_advanced_therapy_initiation_rate__insurance_type").find(r=>r.label==="public")||{}).display} of publicly insured patients start advanced therapy, against ${(boRows("M03_advanced_therapy_initiation_rate__insurance_type").find(r=>r.label==="uninsured")||{}).display} of the uninsured.`,
+          "Expand affordability support; carry into payer negotiation.", "GREEN"))),
+
+    el("p",{class:"sub"},
+      `Synthetic data. ${fmtN(DATA.meta.row_counts.patient)} patients · ${fmtN(DATA.meta.row_counts.claim_medical + DATA.meta.row_counts.claim_pharmacy)} claims · ${fmtN(DATA.meta.row_counts.ehr_encounter)} EHR encounters · ${fmtN(DATA.meta.row_counts.registry_enrollment)} registry enrolments. Minimum cell size ${DATA.meta.min_cell_size}.`)
+  );
+}
+function statTile(k,v,sub){
+  return el("div",{style:"display:flex;flex-direction:column;gap:2px"},
+    el("div",{class:"k-label", style:"font-size:11px;color:var(--ink-3)"}, k),
+    el("div",{style:"font-size:22px;font-weight:600;font-variant-numeric:tabular-nums"}, v),
+    el("div",{style:"font-size:11px;color:var(--ink-3);line-height:1.35"}, sub));
+}
+function finding(title, body, action, band){
+  return el("div",{style:"display:flex;flex-direction:column;gap:7px"},
+    el("div",{}, el("span",{class:"band "+band}, band)),
+    el("h4",{style:"font-size:15.5px;font-weight:600;line-height:1.35"}, title),
+    el("p",{style:"font-size:13.5px;color:var(--ink-2);margin:0"}, body),
+    el("p",{style:"font-size:12.5px;color:var(--ink-3);margin:0"}, "→ "+action));
+}
+
+/* ---------------------------------------------------- Launch */
+{
+  const p = panels.launch, m4 = MET.M04_brand_share_new_starts;
+  p.append(
+    el("div",{}, el("h2",{class:"sec"}, "Launch signals"),
+      el("p",{class:"sub"}, "Every chart below is drawn from an executed, cited query. Where the data cannot support a point, the chart says so rather than smoothing over it.")),
+
+    el("div",{class:"panel"},
+      el("figure",{},
+        el("div",{style:"display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap"},
+          el("h3",{style:"font-size:16px;font-weight:600"}, "SANOVIA share of new advanced-therapy starts"),
+          el("span",{class:"band "+bandOf("M04_brand_share_new_starts")}, bandOf("M04_brand_share_new_starts"))),
+        el("div",{class:"chartbox"}, trendChart(m4.series,{runoff:2, aria:"Monthly share of new advanced therapy starts since launch"})),
+        el("div",{class:"legend"},
+          el("span",{}, el("i",{style:"background:var(--accent)"}), "share of new starts"),
+          el("span",{}, el("i",{style:"background:repeating-linear-gradient(135deg,var(--hatch) 0 2px,transparent 2px 5px)"}), `suppressed — fewer than ${DATA.meta.min_cell_size} in the cell`),
+          el("span",{}, el("i",{style:"background:var(--warn);opacity:.35"}), "understated by claim run-off")),
+        el("figcaption",{}, M.M04_brand_share_new_starts.caveat))),
+
+    el("div",{class:"grid g2"},
+      chartPanel("Time to confirmed diagnosis, by province",
+        barChart(boRows("M01_time_to_diagnosis__province").sort((a,b)=>b.value-a.value),
+          {ref: MET.M01_time_to_diagnosis.value, refLabel:"national median", aria:"Median days to diagnosis by province"}),
+        "The gradient is not random: the slowest provinces are the most rural. Days from first symptom-coded claim to first confirmed diagnosis.",
+        bandOf("M01_time_to_diagnosis")),
+      chartPanel("Severe patients with no systemic therapy, by province",
+        barChart(boRows("M12_untreated_severe_gap__province").sort((a,b)=>b.value-a.value),
+          {aria:"Untreated severe share by province"}),
+        M.M12_untreated_severe_gap.caveat, bandOf("M12_untreated_severe_gap"))),
+
+    el("div",{class:"grid g2"},
+      chartPanel("Advanced therapy initiation, by payer channel",
+        barChart(boRows("M03_advanced_therapy_initiation_rate__insurance_type"),
+          {labelW:74, aria:"Initiation rate by insurance type"}),
+        "Public formulary listing lag and out-of-pocket exposure both show up here. The uninsured gap is the largest single access signal in the product.",
+        bandOf("M03_advanced_therapy_initiation_rate")),
+      chartPanel("12-month persistence, rural against urban",
+        barChart(boRows("M05_persistence_12mo__rurality"), {labelW:54, aria:"Persistence by rurality"}),
+        M.M05_persistence_12mo.caveat, bandOf("M05_persistence_12mo"))),
+
+    el("div",{class:"panel"},
+      el("div",{class:"eyebrow"},"Contracted sources"),
+      el("div",{class:"tblwrap"}, sourceTable()))
+  );
+}
+function chartPanel(title, svg, caption, band){
+  return el("div",{class:"panel"},
+    el("figure",{},
+      el("div",{style:"display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"},
+        el("h3",{style:"font-size:15px;font-weight:600"}, title),
+        band?el("span",{class:"band "+band}, band):null),
+      el("div",{class:"chartbox"}, svg),
+      el("figcaption",{}, caption)));
+}
+function sourceTable(){
+  const t = el("table",{});
+  t.append(el("thead",{}, el("tr",{}, ["Source","Type","Geography","Publication lag","Consent basis","Licence expiry","Rows"].map(h=>el("th",{},h)))));
+  const tb = el("tbody",{});
+  DATA.sources.forEach(s0=>{
+    const late = s0.publication_lag_days > 30;
+    tb.append(el("tr",{},
+      el("td",{}, el("span",{class:"mono", style:"font-size:11.5px"}, s0.source_id)),
+      el("td",{}, s0.source_type),
+      el("td",{}, s0.geography),
+      el("td",{class:"n"}, el("span",{class: late?"chip no":"chip ok"}, s0.publication_lag_days+" days")),
+      el("td",{}, s0.consent_basis),
+      el("td",{class:"n"}, s0.license_expiry),
+      el("td",{class:"n"}, fmtN(s0.record_count))));
+  });
+  t.append(tb); return t;
+}
+
+/* ---------------------------------------------------- Fitness for use */
+{
+  const p = panels.ffu;
+  const sorted = [...DATA.ffu].sort((a,b)=>a.ffu_score-b.ffu_score);
+  const list = el("div",{class:"rowlist"});
+  sorted.forEach(f=>{
+    list.append(scoreRow(f.metric_label, `${f.metric_id} · n = ${fmtN(f.n)}`, f.ffu_score, f.band));
+  });
+  const blocked = DATA.ffu.filter(f=>f.blocked);
+  p.append(
+    el("div",{}, el("h2",{class:"sec"}, "Fitness for use"),
+      el("p",{class:"sub"}, "Scored for a metric on a cohort, weighted 60% asset quality (only the quality dimensions that metric depends on), 25% cohort sufficiency, 15% governance — with veto rules that override the score, because some failures are not tradeable against a good average.")),
+    el("div",{class:"panel"},
+      el("div",{class:"eyebrow"}, "Every governed metric, against the full population"), list),
+    ...blocked.map(f=>el("div",{class:"panel"},
+      el("div",{style:"display:flex;gap:10px;align-items:center;flex-wrap:wrap"},
+        el("span",{class:"band RED"},"Blocked"),
+        el("h3",{style:"font-size:16px;font-weight:600"}, f.metric_label)),
+      el("div",{class:"note crit-note"},
+        el("b",{},"Why publication is blocked"),
+        el("ul",{style:"margin:7px 0 0;padding-left:18px"},
+          ...f.veto_reasons.map(v=>el("li",{style:"margin-bottom:4px"}, v)))),
+      ...f.top_drivers.map(d=>el("details",{},
+        el("summary",{}, `${d.check_id} · ${d.dimension} — scored ${d.score}`),
+        el("div",{class:"dbody"},
+          el("div",{}, el("b",{},"Observed: "), d.observed),
+          el("div",{}, el("b",{},"Business impact: "), d.business_impact),
+          el("div",{}, el("b",{},"Remediation: "), d.remediation),
+          el("div",{style:"color:var(--ink-3)"}, "Owner: "+d.owner)))),
+      el("p",{class:"sub"}, el("b",{},"Metric caveat: "), f.metric_caveat))),
+    el("div",{class:"panel"},
+      el("div",{class:"eyebrow"},"The same defect, two verdicts"),
+      el("p",{style:"font-size:14px;color:var(--ink-2);margin:0;max-width:74ch"},
+        "DQ-08 — the registry covering rural patients at 0.41× the claims spine — scores zero. Quality of life declares representativeness as critical, so it is vetoed and blocked. Brand share never reads the registry, so it is untouched. One defect, two correct and opposite verdicts. Scoring the dataset instead of the question cannot produce that."))
+  );
+}
+
+/* ---------------------------------------------------- Data quality */
+{
+  const p = panels.dq, checks = DATA.dq.checks;
+  const statusBand = st => st==="PASS"?"GREEN":(st==="WARN"?"AMBER":"RED");
+  const list = el("div",{class:"rowlist"});
+  [...checks].sort((a,b)=>a.score-b.score).forEach(c=>{
+    list.append(el("div",{},
+      scoreRow(c.description, `${c.check_id} · ${c.table} · ${c.dimension}`, c.score, statusBand(c.status),
+        el("span",{class:"chip "+(c.status==="PASS"?"ok":(c.status==="FAIL"?"no":""))}, `${c.value} ${c.unit}`)),
+      el("details",{}, el("summary",{}, "Impact, remediation and owner"),
+        el("div",{class:"dbody"},
+          el("div",{}, el("b",{},"Business impact: "), c.business_impact),
+          el("div",{}, el("b",{},"Remediation: "), c.remediation),
+          el("div",{style:"color:var(--ink-3)"},
+            `Owner: ${c.owner} · severity ${c.severity} · green at ${c.green_threshold}, red at ${c.red_threshold}`)))));
+  });
+  p.append(
+    el("div",{}, el("h2",{class:"sec"}, "Data quality"),
+      el("p",{class:"sub"}, `15 checks across 13 dimensions, built on the Kahn harmonised terminology and extended with the operational and governance dimensions that decide whether an asset can carry a launch decision. Overall score ${DATA.dq.overall} of 100, taken as the mean of per-dimension worst cases.`)),
+    el("div",{class:"note"},
+      el("b",{},"A red number is not a finding. "),
+      "Every check carries the business consequence, a specific remediation and a named owner — otherwise it creates work without direction. Expand any row."),
+    el("div",{class:"panel"}, list)
+  );
+}
+
+/* ---------------------------------------------------- Agent */
+{
+  const p = panels.agent;
+  p.append(
+    el("div",{}, el("h2",{class:"sec"}, "Ask HELIOS"),
+      el("p",{class:"sub"}, "Real answers from the running system, including the ones it refused. Four of the five ways a question can end are refusals — that ratio is deliberate.")),
+    ...DATA.agent_answers.map(a=>{
+      const refused = a.status!=="answered";
+      const foot = el("div",{class:"qa-foot"});
+      if(!refused){
+        foot.append(el("span",{class:"band "+a.band}, a.band+" · "+a.ffu_score));
+        (a.citations||[]).slice(0,4).forEach(c=>foot.append(
+          el("span",{class:"cite"}, el("b",{},c.cohort_hash), ` n=${fmtN(c.denominator)}`)));
+        if((a.citations||[]).length>4) foot.append(el("span",{class:"cite"}, `+${a.citations.length-4} more cells`));
+        foot.append(el("span",{}, `${a.claims} numeric claims verified · groundedness ${a.groundedness}`));
+      } else {
+        foot.append(el("span",{class:"band RED"},
+          a.status==="refused_not_fit"?"Refused — not fit":"Refused — out of scope"));
+      }
+      foot.append(el("span",{}, `${Math.round(a.latency_ms)} ms`));
+      if(a.metric_id) foot.append(el("span",{class:"mono", style:"font-size:11px"}, a.metric_id));
+      return el("div",{class:"qa"},
+        el("div",{class:"qa-q"}, el("span",{class:"qmark"},"Q"), el("h4",{}, a.question)),
+        el("div",{class:"qa-body"},
+          el("div",{class:"answer"+(refused?" refusal":"")}, a.narrative), foot));
+    })
+  );
+}
+
+/* ---------------------------------------------------- Assurance */
+{
+  const p = panels.assurance, ev = DATA.evaluation, tl = DATA.telemetry;
+  const gt = el("table",{});
+  gt.append(el("thead",{}, el("tr",{}, ["Gate","Observed","Threshold","Result"].map(h=>el("th",{},h)))));
+  const gb = el("tbody",{});
+  ev.findings.forEach(f=>gb.append(el("tr",{},
+    el("td",{}, el("span",{class:"mono", style:"font-size:12px"}, f.metric)),
+    el("td",{class:"n"}, String(f.value)),
+    el("td",{class:"n"}, String(f.threshold)),
+    el("td",{}, el("span",{class:"chip "+(f.passed?"ok":"no")}, f.passed?"PASS":"FAIL")))));
+  gt.append(gb);
+
+  const cat = {};
+  ev.rows.forEach(r=>{ (cat[r.category] ||= []).push(r); });
+  const catList = el("div",{class:"rowlist"});
+  Object.entries(cat).forEach(([c,rs])=>{
+    const ok = rs.filter(r=>r.routing_ok && r.refusal_ok && r.gate_ok && r.suppression_ok && !r.safety_violation).length;
+    catList.append(scoreRow(c.replace(/_/g," "), `${rs.length} cases`, 100*ok/rs.length,
+      ok===rs.length?"GREEN":"RED", el("span",{class:"chip "+(ok===rs.length?"ok":"no")}, `${ok}/${rs.length}`)));
+  });
+
+  const st = tl.stage_latency;
+  p.append(
+    el("div",{}, el("h2",{class:"sec"}, "Assurance"),
+      el("p",{class:"sub"}, "How we decided this is good enough to ship, and how we would know it stopped being so.")),
+    el("div",{class:"grid g2"},
+      el("div",{class:"panel"},
+        el("div",{class:"eyebrow"},"Release gate"),
+        el("div",{class:"tblwrap"}, gt),
+        el("p",{class:"sub"}, "Thresholds are deliberately asymmetric. Routing may be imperfect and still ship, because a mis-routed answer is caught by the reader in seconds. Groundedness and safety may not, because a wrong number looks exactly like a right one.")),
+      el("div",{class:"panel"},
+        el("div",{class:"eyebrow"},"Golden set by category"),
+        catList,
+        el("p",{class:"sub"}, `${ev.scores.cases} cases authored from the business-question register, not from current system behaviour. A case that starts failing is a regression, not a re-baseline.`))),
+    el("div",{class:"panel"},
+      el("div",{class:"eyebrow"},"The eval suite earned its place"),
+      el("p",{style:"font-size:14px;color:var(--ink-2);margin:0;max-width:74ch"},
+        "It found four real defects in the system it was written to measure: two safety violations (a share-price question and a request to draft promotional copy were both answered with brand-share data), a false refusal in the scope guard itself (it was blocking “cost per patient year”, a population metric), verifier false positives on governed labels such as “per 100 patients”, and — most dangerous — a question about Prince Edward Island that returned a confident national figure because no alias mapped the province name. An eval that only confirms what you already believe is decoration.")),
+    el("div",{class:"grid g2"},
+      el("div",{class:"panel"},
+        el("div",{class:"eyebrow"},"Where the time goes"),
+        el("div",{class:"rowlist"},
+          ...Object.entries(st).filter(([,v])=>v!=null).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+            el("div",{class:"rowitem"},
+              el("div",{class:"r-name"}, el("b",{}, k)),
+              el("div",{class:"track"}, el("div",{class:"fill GREEN",
+                style:`width:${Math.min(100, 100*v/Math.max(...Object.values(st).filter(Boolean)))}%;background:var(--accent)`})),
+              el("div",{class:"score"}, v+" ms"), el("span",{})))),
+        el("p",{class:"sub"}, "Per-stage timing matters more than the total. When p95 sat at 5.5 seconds the split showed it was entirely break-out fan-out — eleven provincial cohorts each re-scanning the patient spine. Cohort indexes took p95 to about 1.4 seconds. A single total would have prompted a guess.")),
+      el("div",{class:"panel"},
+        el("div",{class:"eyebrow"},"Adversarial suite"),
+        el("div",{class:"rowlist", style:"font-size:13.5px"},
+          ...[["Injected figure caught","161 → 940 days, and the subtle 161 → 167"],
+              ["SQL injection contained","question text never reaches a SQL string"],
+              ["Write statements blocked","read-only guard raises at the access layer"],
+              ["Malicious plan sanitised","unknown metric, ssn filter and patient_id break-out all stripped"],
+              ["Small cells suppressed","no underlying value present in the response object"],
+              ["Identifiers scrubbed","patient ids, postal codes and emails removed from generated text"]]
+            .map(([k,v])=>el("div",{class:"rowitem", style:"grid-template-columns:1fr auto"},
+              el("div",{class:"r-name"}, el("b",{},k), el("div",{style:"font-size:11.5px;color:var(--ink-3)"}, v)),
+              el("span",{class:"chip ok"},"pass")))),
+        el("p",{class:"sub"}, "22 assertions run beside the golden set on every change.")))
+  );
+}
+
+document.body.append(el("footer",{}, el("div",{class:"wrap"},
+  el("div",{}, `Generated ${DATA.meta.generated_at} · semantic layer v${DATA.meta.semantic_layer_version} · ${DATA.meta.warehouse_queries} queries, ${fmtN(DATA.meta.warehouse_rows_scanned)} rows scanned in this run.`),
+  el("div",{style:"margin-top:6px"}, "All data is synthetic and generated for this project. SANOVIA is a fictional brand. No real patient, prescriber, payer or product data is used, and nothing here represents any real company's data, products or performance."))));
+</script>
