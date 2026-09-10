@@ -95,9 +95,9 @@ Where HELIOS figures inform revenue forecasting or accruals:
 | SQL injection through question text | Cohort compiler binds all values as parameters; ungoverned values raise `CohortError` | Guardrail test 2 |
 | Destructive query | Read-only guard rejects write statements at the access layer | `db.ReadOnlyViolation` |
 | Data exfiltration via break-out fan-out | Small-cell policy applies per cell; complementary suppression prevents recovery | P1–P3 |
-| Model unavailability / degraded output | Deterministic planner as default and fallback; failure recorded, never silent | `ClaudePlanner` fallback |
+| Model unavailability / degraded output | Deterministic planner as default and fallback; failure recorded, never silent | `ModelPlanner` fallback |
 | Excessive resource consumption | Row limits on every query; queries and rows scanned recorded per answer | `Warehouse.query` |
-| Secrets in code | Credentials resolved from the environment; nothing hardcoded | `llm.ClaudePlanner` |
+| Secrets in code | Credentials resolved from the environment; nothing hardcoded | `llm.ModelPlanner` |
 
 ### 5.1 Why "the model never writes SQL" is the load-bearing control
 
