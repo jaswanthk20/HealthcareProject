@@ -35,7 +35,7 @@ def ask(payload, question, planner=None):
         if row["value"] is None:
             lines.append(prefix + ": unavailable (" + (payload["flags"].get(row["value_status"]) if row["value_status"] else "Not available") + ").")
         else:
-            interval = f"; 95% CI {row['low']}–{row['high']}%" if row["low"] is not None and row["high"] is not None else "; interval unavailable"
+            interval = f"; 95% CI {row['low']}-{row['high']}%" if row["low"] is not None and row["high"] is not None else "; interval unavailable"
             lines.append(prefix + f": {row['value']}%" + interval + "; " + row["quality"] + ".")
     lines += payload["limitations"]
     lines.append("Source: " + payload["source"]["url"])

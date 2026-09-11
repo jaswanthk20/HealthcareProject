@@ -12,7 +12,7 @@ def main():
     dictionary += "## Governed indicators\n\n" + "\n".join("- `" + key + "`: " + label for key, label in data["indicators"].items())
     dictionary += "\n\n## Population dimensions\n\n" + "\n".join("- **" + key + "**: " + "; ".join(values) for key, values in data["dimensions"].items()) + "\n"
     (ROOT / "docs/03_data_dictionary.md").write_text(dictionary, encoding="utf-8")
-    report = "# Official-source quality results\n\nPublished: " + s["release_date"] + ". Reference years: " + s["first_year"] + "–" + s["latest_year"] + ".\n\n"
+    report = "# Official-source quality results\n\nPublished: " + s["release_date"] + ". Reference years: " + s["first_year"] + "-" + s["latest_year"] + ".\n\n"
     report += "Source rows inspected: " + str(s["source_rows"]) + ". Governed estimate cells: " + str(len(data["rows"])) + ".\n\n"
     report += "| Display status | Cells |\n|---|---:|\n" + "\n".join("| " + q + " | " + str(n) + " |" for q,n in data["quality"].items())
     report += "\n\nMissing and suppressed estimates remain null. No defects or observations are injected. These statuses do not certify clinical fitness.\n\nSource SHA-256: `" + s["source_sha256"] + "`.\n"

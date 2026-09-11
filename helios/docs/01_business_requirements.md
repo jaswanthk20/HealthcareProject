@@ -1,4 +1,4 @@
-# Business requirements — official healthcare data
+# Business requirements - official healthcare data
 
 ## Purpose
 

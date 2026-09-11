@@ -13,6 +13,8 @@ def main():
     if template.count("__HELIOS_DATA__") != 1:
         raise ValueError("Dashboard requires one data placeholder")
     html = template.replace("__HELIOS_DATA__", blob)
+    # Keep publisher text intact in the source export; normalize presentation only.
+    html = html.replace("\u2014", "-").replace("\u2013", "-")
     (ROOT / "dashboard/helios_dashboard.html").write_text(html, encoding="utf-8")
     dist = ROOT.parent / "dist"
     dist.mkdir(exist_ok=True)

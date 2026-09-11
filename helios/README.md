@@ -1,4 +1,4 @@
-# HELIOS — Canadian health indicators
+# HELIOS - Canadian health indicators
 
 A healthcare intelligence dashboard backed by **official published survey data**, downloaded directly from Statistics Canada. No generated patient records or simulated clinical outcomes are used.
 
@@ -8,7 +8,7 @@ A healthcare intelligence dashboard backed by **official published survey data**
 
 ## Source and scope
 
-[Statistics Canada table 13-10-0905-01 — Health indicator statistics, annual estimates](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1310090501), from the Canadian Community Health Survey. The source currently covers observations through **2024**, released **2025-08-06**. A download made today does not turn historical observations into real-time clinical data.
+[Statistics Canada table 13-10-0905-01 - Health indicator statistics, annual estimates](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1310090501), from the Canadian Community Health Survey. The source currently covers observations through **2024**, released **2025-08-06**. A download made today does not turn historical observations into real-time clinical data.
 
 Eight governed indicators: regular healthcare-provider access, diabetes, high blood pressure, fair/poor mental health, anxiety disorder, mood disorder, obesity and current smoking. Explore Canada excluding territories and ten provinces, five adult age groups, three sex categories and reference years beginning in 2022.
 
