@@ -1,41 +1,123 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HELIOS · Canadian health indicators</title>
 <style>
-:root{--ink:#102e3c;--muted:#526777;--accent:#0b6e7d;--line:#d5dce5;--tint:#e4f2f3}*{box-sizing:border-box}body{margin:0;background:#edf0f4;color:var(--ink);font:16px/1.55 system-ui,sans-serif}header{background:var(--ink);color:white;padding:24px max(24px,calc((100vw - 1280px)/2))}header b{font-size:25px;letter-spacing:.08em}header p{margin:4px 0;color:#c4d5df}.wrap{max-width:1328px;margin:auto;padding:24px}h1{font-size:30px;margin:0 0 8px}h2{font-size:22px;margin:0 0 14px}h3{font-size:17px;margin:0 0 8px}p{margin:8px 0 16px}a{color:var(--accent)}.muted{color:var(--muted);font-size:14px}.banner{border-left:4px solid var(--accent);background:var(--tint);padding:14px 18px;margin:16px 0}.controls{display:grid;grid-template-columns:2fr 1.5fr 1.3fr 1fr .7fr;gap:12px;margin:20px 0}label{font-size:14px;font-weight:650;display:block}select,input,button{font:inherit;border:1px solid #adbcc5;border-radius:5px;padding:10px;background:white;color:var(--ink)}select,input{width:100%;margin-top:5px}button{cursor:pointer}button:hover{background:var(--tint)}:focus-visible{outline:3px solid #d0882c;outline-offset:2px}.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px}.tabs button[aria-selected=true]{background:var(--accent);color:white}.panel{background:white;padding:24px;border:1px solid var(--line);border-radius:8px;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.card{padding:20px;background:white;border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:6px}.value{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;margin:8px 0}.pill{display:inline-block;padding:2px 8px;border-radius:4px;background:var(--tint);font-size:14px}.caution{background:#fff0d6;color:#88520b}.unavailable{background:#fbe8e7;color:#923431}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:14px;color:var(--muted)}td:nth-child(2){white-space:nowrap}.bar-row{display:grid;grid-template-columns:175px 1fr 75px;gap:12px;align-items:center;margin:16px 0;font-size:14px}.track{height:12px;background:#edf2f5;position:relative;border-radius:4px}.bar{height:12px;background:var(--accent);border-radius:4px}.range{position:absolute;top:4px;height:4px;background:#16333e;border-left:2px solid white;border-right:2px solid white}.row{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}.answer{white-space:pre-line;margin:16px 0}footer{padding:20px 0;color:var(--muted);font-size:14px}details{padding:10px 0;border-top:1px solid var(--line)}summary{cursor:pointer}[hidden]{display:none!important}@media(max-width:1000px){.controls,.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.wrap{padding:16px}.grid,.controls{grid-template-columns:1fr}.panel{padding:18px}.bar-row{grid-template-columns:110px 1fr 60px}.value{font-size:28px}}
-</style></head><body><header><b>HELIOS</b><p>Canadian health indicators · Official public data</p></header><main class="wrap">
-<div class="row"><div><h1>Healthcare access & population health</h1><p class="muted" id="dates"></p></div><button id="refresh">Check for updated data</button></div><div class="banner" id="status" role="status"></div>
-<div class="controls"><label>Indicator<select id="indicator"></select></label><label>Geography<select id="geography"></select></label><label>Age group<select id="age"></select></label><label>Sex<select id="sex"></select></label><label>Reference year<select id="year"></select></label></div>
-<nav class="tabs" role="tablist" aria-label="Dashboard sections"><button role="tab" id="t-overview" aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button><button role="tab" id="t-trends" aria-controls="trends" aria-selected="false" data-tab="trends">Trends</button><button role="tab" id="t-quality" aria-controls="quality" aria-selected="false" data-tab="quality">Data quality</button><button role="tab" id="t-ask" aria-controls="ask" aria-selected="false" data-tab="ask">Ask HELIOS</button><button role="tab" id="t-sources" aria-controls="sources" aria-selected="false" data-tab="sources">Sources & methods</button><button role="tab" id="t-assurance" aria-controls="assurance" aria-selected="false" data-tab="assurance">Assurance</button></nav>
+:root {
+  --ink: #102e3c;
+  --muted: #526777;
+  --accent: #0b6e7d;
+  --line: #d9e1e6;
+  --tint: #eaf3f4;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #f4f6f8; color: var(--ink); font: 16px/1.55 system-ui, sans-serif; }
+header { display: flex; align-items: center; gap: 24px; background: var(--ink); color: white; padding: 17px max(24px, calc((100vw - 1280px)/2)); }
+header b { font-size: 21px; letter-spacing: .06em; }
+header p { margin: 0; padding-left: 24px; border-left: 1px solid #4b626e; color: #d2e0e7; font-size: 14px; }
+.wrap { max-width: 1328px; margin: auto; padding: 32px 24px; }
+h1 { font-size: clamp(25px, 3vw, 32px); line-height: 1.2; font-weight: 650; letter-spacing: -.025em; margin: 0 0 8px; }
+h2 { font-size: 21px; line-height: 1.35; font-weight: 650; margin: 0 0 14px; }
+h3 { font-size: 16px; font-weight: 550; margin: 0 0 8px; }
+p { margin: 8px 0 16px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+.muted { color: var(--muted); font-size: 14px; }
+.banner { border-left: 3px solid #c69a48; background: #fcf7eb; padding: 12px 16px; margin: 20px 0; font-size: 14px; }
+#status { margin: 12px 0 24px; color: var(--muted); font-size: 14px; min-height: 22px; }
+.controls { display: grid; grid-template-columns: 2fr 1.5fr 1.3fr 1fr .75fr; gap: 16px; padding: 18px 20px; background: white; border: 1px solid var(--line); border-radius: 6px; margin: 20px 0 24px; }
+label { min-width: 0; font-size: 14px; font-weight: 600; display: block; }
+select, input, button { font: inherit; border: 1px solid #b8c6cf; border-radius: 4px; padding: 10px 12px; background: white; color: var(--ink); }
+select, input { width: 100%; min-width: 0; margin-top: 6px; }
+select { font-size: 14px; }
+button { cursor: pointer; font-size: 14px; font-weight: 550; }
+button:hover { background: var(--tint); }
+button:disabled { cursor: wait; opacity: .65; }
+:focus-visible { outline: 3px solid #c68b30; outline-offset: 3px; }
+.tabs { display: flex; gap: 24px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.tabs button { padding: 10px 0 14px; background: none; border: 0; border-radius: 0; border-bottom: 3px solid transparent; color: var(--muted); }
+.tabs button[aria-selected=true] { border-bottom-color: var(--accent); color: var(--ink); font-weight: 650; }
+.panel { background: white; padding: 28px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 24px; min-width: 0; }
+.grid { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); gap: 24px; align-items: start; }
+.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: white; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 28px; }
+.card { padding: 22px 24px; border-right: 1px solid var(--line); }
+.card:last-child { border-right: 0; }
+.card h3 { min-height: 48px; max-width: 23ch; color: var(--muted); }
+.value { font-size: 38px; line-height: 1.2; font-weight: 650; letter-spacing: -.025em; font-variant-numeric: tabular-nums; margin: 12px 0; }
+.grid > .panel:first-child .value { font-size: 56px; margin: 20px 0 12px; }
+.pill { display: inline-block; padding: 3px 8px; border-radius: 3px; background: var(--tint); font-size: 14px; }
+.caution { background: #fff0d6; color: #88520b; }
+.unavailable { background: #fbe8e7; color: #923431; }
+.scroll { overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 13px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 14px; font-weight: 600; color: var(--muted); }
+tbody tr:hover { background: #f6f9fa; }
+.scroll th:nth-child(2), .scroll td:nth-child(2), .scroll th:nth-child(3), .scroll td:nth-child(3) { text-align: right; white-space: nowrap; }
+.bar-row { display: grid; grid-template-columns: 175px 1fr 75px; gap: 14px; align-items: center; margin: 19px 0; font-size: 14px; }
+.bar-row > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.track { height: 10px; background: #edf2f5; position: relative; border-radius: 2px; }
+.bar { height: 10px; background: #397e8d; border-radius: 2px; }
+.range { position: absolute; top: 3px; height: 4px; background: #16333e; border-left: 2px solid white; border-right: 2px solid white; }
+.row { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.answer { white-space: pre-line; margin: 20px 0; }
+footer { border-top: 1px solid var(--line); padding: 20px 0; color: var(--muted); font-size: 14px; }
+details { padding: 12px 0; border-top: 1px solid var(--line); }
+summary { cursor: pointer; }
+[hidden] { display: none !important; }
+@media (max-width: 1100px) {
+  .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .card:nth-child(2) { border-right: 0; }
+  .card:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 650px) {
+  header { display: block; padding: 16px; }
+  header p { border: 0; padding: 0; margin-top: 4px; }
+  .wrap { padding: 24px 16px; }
+  .controls { grid-template-columns: 1fr; padding: 16px; }
+  .panel { padding: 20px; }
+  .tabs { gap: 16px; }
+  .bar-row { grid-template-columns: 105px 1fr 68px; gap: 10px; }
+  .card { padding: 16px; }
+  .card h3 { min-height: 68px; }
+  .value { font-size: 30px; }
+  .grid > .panel:first-child .value { font-size: 44px; }
+}
+</style></head><body><header><b>HELIOS</b><p>Canadian health indicators</p></header><main class="wrap">
+<div class="row"><div><h1>Health across Canada</h1><p class="muted" id="dates"></p></div><button id="refresh">Refresh data</button></div><div id="status" role="status"></div>
+<div class="controls"><label>Indicator<select id="indicator"></select></label><label>Province or Canada<select id="geography"></select></label><label>Age group<select id="age"></select></label><label>Sex<select id="sex"></select></label><label>Reference year<select id="year"></select></label></div>
+<nav class="tabs" role="tablist" aria-label="Dashboard sections"><button role="tab" id="t-overview" aria-controls="overview" aria-selected="true" data-tab="overview">Overview</button><button role="tab" id="t-trends" aria-controls="trends" aria-selected="false" data-tab="trends">Trends</button><button role="tab" id="t-quality" aria-controls="quality" aria-selected="false" data-tab="quality">Data quality</button><button role="tab" id="t-ask" aria-controls="ask" aria-selected="false" data-tab="ask">Ask HELIOS</button><button role="tab" id="t-sources" aria-controls="sources" aria-selected="false" data-tab="sources">Sources & methods</button><button role="tab" id="t-assurance" aria-controls="assurance" aria-selected="false" data-tab="assurance">About the data</button></nav>
 <section role="tabpanel" aria-labelledby="t-overview" id="overview"></section><section role="tabpanel" aria-labelledby="t-trends" id="trends" hidden></section><section role="tabpanel" aria-labelledby="t-quality" id="quality" hidden></section>
-<section role="tabpanel" aria-labelledby="t-ask" id="ask" hidden><div class="panel"><h2>Ask about a published indicator</h2><p>Set the population and year above, then ask about healthcare access, diabetes, blood pressure, mental health, anxiety, mood disorders, obesity or smoking.</p><form id="ask-form"><label>Your question<input id="question" placeholder="What percentage has a regular healthcare provider?" required></label><button style="margin-top:12px">Show published estimate</button></form><div class="answer" id="answer" aria-live="polite"></div><p class="muted">Answers quote published cells. No patient-level records or generated estimates are used.</p></div></section>
+<section role="tabpanel" aria-labelledby="t-ask" id="ask" hidden><div class="panel"><h2>Look up an estimate</h2><p>Choose a population and year above, then ask about one of the eight indicators.</p><form id="ask-form"><label>Your question<input id="question" placeholder="What percentage has a regular healthcare provider?" required></label><button style="margin-top:12px">Find estimate</button></form><div class="answer" id="answer" aria-live="polite"></div><p class="muted">Results use the same Statistics Canada estimates shown in the tables.</p></div></section>
 <section role="tabpanel" aria-labelledby="t-sources" id="sources" hidden></section><section role="tabpanel" aria-labelledby="t-assurance" id="assurance" hidden></section><footer id="attribution"></footer></main>
 <script>
 let DATA=__HELIOS_DATA__;
+const CARD_LABELS={access:'Has a regular healthcare provider',diabetes:'Diabetes',blood_pressure:'High blood pressure',mental_health:'Fair or poor mental health'};
+const plainDashes=value=>String(value??'').replace(/[\u2013\u2014]/g,'-');
 const UPDATE_URL='https://raw.githubusercontent.com/jaswanthk20/HealthcareProject/main/helios/outputs/dashboard_data.json';
-const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id),esc=v=>plainDashes(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>v===null||v===undefined?'Not available':Number(v).toFixed(1)+'%';
-const ci=r=>r?.low!=null&&r?.high!=null?`${r.low.toFixed(1)}–${r.high.toFixed(1)}%`:'Not available';
-const quality=r=>!r?'No published cell':r.value===null?(r.value_status?DATA.flags[r.value_status]:'Not available'):r.quality==='caution'?'Use with caution':'Published estimate';
+const ci=r=>r?.low!=null&&r?.high!=null?`${r.low.toFixed(1)}-${r.high.toFixed(1)}%`:'Not available';
+const quality=r=>!r?'Not available':r.value===null?(r.value_status?DATA.flags[r.value_status]:'Not available'):r.quality==='caution'?'Use with caution':'Published';
 const badge=r=>`<span class="pill ${esc(r?.quality||'unavailable')}">${esc(quality(r))}</span>`;
 function selected(){return Object.fromEntries(['indicator','geography','age','sex','year'].map(k=>[k,$(k).value]));}
 function cell(filters){return DATA.rows.find(r=>Object.entries(filters).every(([k,v])=>r[k]===v));}
 function setOptions(id,values,preferred){const old=$(id).value;$(id).innerHTML=values.map(v=>`<option value="${esc(v[0])}">${esc(v[1])}</option>`).join('');$(id).value=values.some(v=>v[0]===old)?old:preferred||values[0][0];}
 function initialize(){setOptions('indicator',Object.entries(DATA.indicators),'access');for(const key of ['geography','age','sex','year'])setOptions(key,DATA.dimensions[key].map(v=>[v,v]),({geography:'Canada (excluding territories)',age:'Total, 18 years and over',sex:'Both sexes',year:DATA.source.latest_year})[key]);render();}
-function table(rows,dimension){return `<div class="scroll"><table><thead><tr><th>${esc(dimension)}</th><th>Estimate</th><th>95% confidence interval</th><th>Source status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r[dimension])}</td><td>${fmt(r.value)}</td><td>${ci(r)}</td><td>${badge(r)}</td></tr>`).join('')}</tbody></table></div>`;}
+function table(rows,dimension){return `<div class="scroll"><table><thead><tr><th>${dimension==='year'?'Year':'Province'}</th><th>Estimate</th><th>95% confidence interval</th><th>Source status</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r[dimension])}</td><td>${fmt(r.value)}</td><td>${ci(r)}</td><td>${badge(r)}</td></tr>`).join('')}</tbody></table></div>`;}
 function bars(rows){return rows.map(r=>`<div class="bar-row"><span>${esc(r.geography)}</span><div class="track" aria-hidden="true">${r.value===null?'':`<div class="bar" style="width:${r.value}%"></div>${r.low===null||r.high===null?'':`<div class="range" style="left:${r.low}%;width:${r.high-r.low}%"></div>`}`}</div><span>${fmt(r.value)}</span></div>`).join('');}
-function render(){const s=selected(),r=cell(s),source=DATA.source;$('dates').textContent=`Reference years ${source.first_year}–${source.latest_year} · Source release ${source.release_date} · Table ${source.table}`;$('attribution').textContent=source.attribution;
-if(!$('status').textContent)$('status').textContent=`Official survey estimates. Latest observations: ${source.latest_year}. Snapshot retrieved ${source.retrieved_at.slice(0,10)}. This is not a real-time clinical feed.`;
+function render(){const s=selected(),r=cell(s),source=DATA.source;$('dates').textContent=`Statistics Canada · ${source.first_year}-${source.latest_year} · Released ${source.release_date}`;$('attribution').textContent=plainDashes(source.attribution);
+if(!$('status').textContent)$('status').textContent=`Annual survey data through ${source.latest_year}. Downloaded ${source.retrieved_at.slice(0,10)}.`;
 const population=`${s.geography} · ${s.age} · ${s.sex} · ${s.year}`;
-const cards=['access','diabetes','blood_pressure','mental_health'].map(indicator=>{const c=cell({...s,indicator});return `<article class="card"><h3>${esc(DATA.indicators[indicator])}</h3><div class="value">${fmt(c?.value)}</div><div class="muted">95% CI ${ci(c)}</div>${badge(c)}</article>`;}).join('');
+const cards=['access','diabetes','blood_pressure','mental_health'].map(indicator=>{const c=cell({...s,indicator});return `<article class="card"><h3 title="${esc(DATA.indicators[indicator])}">${esc(CARD_LABELS[indicator])}</h3><div class="value">${fmt(c?.value)}</div><div class="muted">95% CI ${ci(c)}</div>${c?.quality==='published'?'':badge(c)}</article>`;}).join('');
 const provinces=DATA.rows.filter(x=>x.indicator===s.indicator&&x.year===s.year&&x.age===s.age&&x.sex===s.sex&&!x.geography.startsWith('Canada'));
-$('overview').innerHTML=`<p class="muted">${esc(population)}</p><div class="cards">${cards}</div><div class="grid"><div class="panel"><h2>${esc(DATA.indicators[s.indicator])}</h2><div class="value">${fmt(r?.value)}</div><p>95% confidence interval: ${ci(r)}</p>${badge(r)}<p class="banner">${esc(s.indicator==='access'?'The regular-provider question changed in 2024. Comparisons with earlier years require caution.':'These are survey estimates for the selected population. Read the confidence interval and source flags alongside the percentage.')}</p><p class="muted">${esc(population)}</p><a href="${esc(source.url)}">View official source table</a></div><div class="panel"><h2>Across the provinces</h2><p class="muted">Same indicator, year, age and sex. Bars use a 0–100% scale; dark marks show 95% intervals.</p>${bars(provinces)}</div></div><div class="panel"><h2>Provincial estimates</h2>${table(provinces,'geography')}</div>`;
+$('overview').innerHTML=`<p class="muted">${esc(population)}</p><div class="cards">${cards}</div><div class="grid"><div class="panel"><h2>${esc(DATA.indicators[s.indicator])}</h2><div class="value">${fmt(r?.value)}</div><p>95% confidence interval: ${ci(r)}</p>${badge(r)}<p class="banner">${esc(s.indicator==='access'?'The survey question changed in 2024. Compare earlier years with caution.':'The interval shows the uncertainty around this survey estimate.')}</p><p class="muted">${esc(population)}</p><a href="${esc(source.url)}">View official source table</a></div><div class="panel"><h2>Across the provinces</h2><p class="muted">Percent of the selected population. Scale: 0-100%. Dark marks show 95% confidence intervals.</p>${bars(provinces)}</div></div><div class="panel"><h2>Provincial estimates</h2>${table(provinces,'geography')}</div>`;
 const trend=DATA.rows.filter(x=>x.indicator===s.indicator&&x.geography===s.geography&&x.age===s.age&&x.sex===s.sex).sort((a,b)=>a.year.localeCompare(b.year));
 $('trends').innerHTML=`<div class="panel"><h2>${esc(DATA.indicators[s.indicator])} over time</h2><p>${esc(s.geography)} · ${esc(s.age)} · ${esc(s.sex)}</p><p class="banner">${esc(s.indicator==='access'?'The provider question changed in 2024. Differences across that boundary may reflect measurement changes.':'This view starts in 2022, when the survey questionnaire and collection method changed. Differences are descriptive, not claims of statistical significance.')}</p>${table(trend,'year')}</div>`;
 const counts=DATA.quality;
-$('quality').innerHTML=`<div class="panel"><h2>Source flags stay with the figures</h2><p>Across ${DATA.rows.length.toLocaleString()} governed estimate cells: ${counts.published.toLocaleString()} published without a caution flag, ${counts.caution.toLocaleString()} requiring caution, and ${counts.unavailable.toLocaleString()} unavailable or suppressed.</p><table><thead><tr><th>Symbol</th><th>Meaning</th><th>Display rule</th></tr></thead><tbody>${Object.entries(DATA.flags).map(([flag,label])=>`<tr><td>${esc(flag||'No flag')}</td><td>${esc(label)}</td><td>${flag===''?'Show estimate and interval':flag==='E'?'Show with caution':'Do not display a numeric estimate'}</td></tr>`).join('')}</tbody></table><p>Missing confidence bounds also trigger caution. Suppressed estimates never expose their interval bounds. No quality defects are injected.</p></div>`;
+$('quality').innerHTML=`<div class="panel"><h2>Understanding quality flags</h2><p>Across ${DATA.rows.length.toLocaleString()} estimates: ${counts.published.toLocaleString()} published without a caution flag, ${counts.caution.toLocaleString()} requiring caution, and ${counts.unavailable.toLocaleString()} unavailable or suppressed.</p><table><thead><tr><th>Symbol</th><th>Meaning</th><th>Display rule</th></tr></thead><tbody>${Object.entries(DATA.flags).map(([flag,label])=>`<tr><td>${esc(flag||'No flag')}</td><td>${esc(label)}</td><td>${flag===''?'Show estimate and interval':flag==='E'?'Show with caution':'Do not display a numeric estimate'}</td></tr>`).join('')}</tbody></table><p>Estimates without a complete confidence interval are marked for caution. Suppressed figures and their intervals are withheld.</p></div>`;
 const notes=[...new Map(source.notes.map(n=>[n.id,n])).values()];
 $('sources').innerHTML=`<div class="panel"><h2>Statistics Canada · Canadian Community Health Survey</h2><p><a href="${esc(source.url)}">${esc(source.title)} · ${esc(source.table)}</a></p><p>Source release: <b>${esc(source.release_date)}</b><br>Latest observation year: <b>${esc(source.latest_year)}</b><br>Snapshot retrieved: ${esc(source.retrieved_at)}</p><ul>${DATA.limitations.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p><a href="${esc(source.download_url)}">Download official source archive</a> · <a href="${esc(source.licence_url)}">Statistics Canada Open Licence</a></p><p class="muted" style="overflow-wrap:anywhere">Source archive SHA-256: ${esc(source.source_sha256)}</p><h3>Publisher methodology notes</h3>${notes.map(n=>`<details><summary>Source note ${n.id}</summary><p>${esc(n.text)}</p></details>`).join('')}</div>`;
-$('assurance').innerHTML=`<div class="panel"><h2>What this dashboard verifies</h2><ul><li>The table is downloaded from Statistics Canada and identified by its metadata.</li><li>Source columns, units, quality flags, duplicate keys and confidence intervals are validated before publication.</li><li>Percentages and intervals come from published aggregates. No patient records or outcomes are invented.</li><li>Unsupported questions receive no estimated answer.</li><li>Missing or suppressed figures remain unavailable; failed updates retain the labelled verified snapshot.</li></ul><h3>What it cannot establish</h3><p>Published does not mean clinically certified or suitable for every decision. This source does not support drug-launch performance, patient treatment pathways, diagnosis wait times or causal conclusions.</p><h3>Updates</h3><p>The data pipeline checks the official table and republishes validated changes. Use “Check for updated data” to load the newest repository snapshot. The publisher's release cadence determines how current the observations are.</p></div>`;}
+$('assurance').innerHTML=`<div class="panel"><h2>How the data is prepared</h2><p>HELIOS uses published percentages and confidence intervals from Statistics Canada's Canadian Community Health Survey.</p><h3>Before a data update appears</h3><p>The import checks column names, units, quality flags, duplicate records and confidence intervals. If a check fails, the previous download stays available.</p><h3>Reading the results</h3><p>These figures describe population health. They do not measure individual treatment outcomes, drug-launch performance or diagnosis wait times. Differences between groups do not establish cause and effect.</p><h3>Keeping the data current</h3><p>The source is checked daily. Use "Refresh data" to check for the latest available download. Observation years and publication dates are shown separately because survey results take time to publish.</p></div>`;}
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));document.querySelectorAll('[role=tabpanel]').forEach(p=>p.hidden=p.id!==button.dataset.tab);}));
 document.querySelectorAll('select').forEach(select=>select.addEventListener('change',()=>{render();$('answer').textContent='';}));
 const aliases={access:['healthcare provider','regular provider','family doctor','access to care'],diabetes:['diabetes','diabetic'],blood_pressure:['blood pressure','hypertension'],mental_health:['mental health'],anxiety:['anxiety'],mood:['mood disorder'],obesity:['obesity','obese'],smoking:['smoking','smoker']};
@@ -45,7 +127,7 @@ const years=q.match(/\b20\d{2}\b/g)||[],geos=DATA.dimensions.geography.filter(g=
 if(years.some(y=>y!==s.year)||geos.some(g=>g!==s.geography)||ages.some(a=>a!==s.age)||(sex&&sex!==s.sex)){$('answer').textContent='Your question names a different population or year. Set the controls above to match it before asking.';return;}
 const r=cell({...s,indicator:matches[0]});$('answer').textContent=`${DATA.indicators[matches[0]]}\n${s.geography} · ${s.age} · ${s.sex} · ${s.year}\n${fmt(r?.value)}; 95% CI ${ci(r)}. ${quality(r)}.\nSource: Statistics Canada table ${DATA.source.table}; release ${DATA.source.release_date}.`;});
 function validSnapshot(d){return d?.schema_version===1&&d?.source?.table==='13-10-0905-01'&&Array.isArray(d.rows)&&d.rows.length>0&&/^[a-f0-9]{64}$/.test(d.source.source_sha256)&&d.rows.every(r=>r.value===null||(Number.isFinite(r.value)&&r.value>=0&&r.value<=100&&['','E'].includes(r.value_status)));}
-async function refreshData(){const b=$('refresh');b.disabled=true;$('status').textContent='Checking for a newer validated official-data snapshot…';try{const response=await fetch(UPDATE_URL,{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!response.ok)throw Error('Unavailable');const next=await response.json();if(!validSnapshot(next)||next.source.latest_year<DATA.source.latest_year)throw Error('Invalid or older snapshot');DATA=next;initialize();$('status').textContent=`Showing the latest available repository snapshot. Official release: ${DATA.source.release_date}; observations through ${DATA.source.latest_year}.`;}catch(e){$('status').textContent=`Update check unavailable. Still showing the verified official snapshot retrieved ${DATA.source.retrieved_at.slice(0,10)}; observations through ${DATA.source.latest_year}.`;}finally{b.disabled=false;}}
+async function refreshData(){const b=$('refresh');b.disabled=true;$('status').textContent='Checking for updates...';try{const response=await fetch(UPDATE_URL,{cache:'no-store',signal:AbortSignal.timeout(20000)});if(!response.ok)throw Error('Unavailable');const next=await response.json();if(!validSnapshot(next)||next.source.latest_year<DATA.source.latest_year)throw Error('Invalid or older snapshot');DATA=next;initialize();$('status').textContent=`Data is up to date with the latest available download. Observations through ${DATA.source.latest_year}; source release ${DATA.source.release_date}.`;}catch(e){$('status').textContent=`Could not check for updates. Showing data downloaded ${DATA.source.retrieved_at.slice(0,10)}, covering through ${DATA.source.latest_year}.`;}finally{b.disabled=false;}}
 $('refresh').addEventListener('click',refreshData);
 initialize();
 refreshData();

@@ -148,7 +148,7 @@ def build_payload(raw, metadata):
             "first_year": dimensions["year"][0], "latest_year": dimensions["year"][-1],
             "source_rows": source_rows, "notes": notes,
             "attribution": "Adapted from Statistics Canada, Health indicator statistics, annual estimates, "
-                           + dimensions["year"][0] + "–" + dimensions["year"][-1]
+                           + dimensions["year"][0] + "-" + dimensions["year"][-1]
                            + ". This does not constitute an endorsement by Statistics Canada of this product.",
         },
         "indicators": INDICATORS, "dimensions": dimensions, "flags": FLAGS, "rows": rows,

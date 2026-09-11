@@ -1,6 +1,6 @@
 # Official-source quality results
 
-Published: 2025-08-06. Reference years: 2022–2024.
+Published: 2025-08-06. Reference years: 2022-2024.
 
 Source rows inspected: 330636. Governed estimate cells: 3960.
 
