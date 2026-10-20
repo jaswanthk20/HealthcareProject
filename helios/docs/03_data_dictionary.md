@@ -29,7 +29,7 @@ Grain: one percentage estimate per reference year, geography, age, sex and gover
 
 ## Population dimensions
 
-- **year**: 2022; 2023; 2024
+- **year**: 2022; 2023; 2024; 2025
 - **geography**: Alberta; British Columbia; Canada (excluding territories); Manitoba; New Brunswick; Newfoundland and Labrador; Nova Scotia; Ontario; Prince Edward Island; Quebec; Saskatchewan
 - **age**: 18 to 34 years; 35 to 49 years; 50 to 64 years; 65 years and over; Total, 18 years and over
 - **sex**: Both sexes; Females; Males
